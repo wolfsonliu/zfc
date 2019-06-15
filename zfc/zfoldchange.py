@@ -10,7 +10,10 @@ from .statsfunc import bonferroni_correction
 def zfoldchange(data,
                 punish_rate=0.5,
                 iteration=100):
-    # The data DF should contain: [gene, sgrna, barcode, ctrl, exp]
+    # The data DF should contain: [gene, guide, barcode, ctrl, exp]
+
+    for x in ['gene', 'guide', 'barcode', 'ctrl', 'exp']:
+        assert x in data.columns, 'data should have column: {}'.format(x)
 
     # ------------------
     # Step 1: Normalization of raw counts
@@ -18,11 +21,18 @@ def zfoldchange(data,
         data[['ctrl', 'exp']],
         'total'
     )
-    smallcount = df_smallcount(norm)
+    for a in [0.05, 0.1]:
+        smallcount = df_smallcount(norm)
+        if len(smallcount) > 0:
+            break
+    if len(smallcount) == 0:
+        smallcount = np.array(
+            [data['ctrl'][data['ctrl'] > 0].quantile(0.05)]
+        )
     norm = norm + smallcount.mean()
     sgdf = pd.concat(
         [
-            data[['gene', 'sgrna', 'barcode']],
+            data[['gene', 'guide', 'barcode']],
             norm
         ],
         axis=1, sort=False
@@ -46,15 +56,27 @@ def zfoldchange(data,
             sgdf['lfc'].mean() - 2.5 * sgdf['lfc'].std()
         )
     )
-    bins = pd.cut(refnorm, 200)
 
-    sgdf['lfc_mean'] = sgdf['lfc'][sidx].groupby(
-        bins[sidx]
-    ).mean()[bins[sgdf.index]]
+    bins = pd.cut(refnorm, 200).astype(str)
 
-    sgdf['lfc_std'] = sgdf['lfc'][sidx].groupby(
-        bins[sidx]
-    ).std()[bins[sgdf.index]]
+    bins_std = sgdf['lfc'][
+        np.asarray(sidx)
+    ].groupby(bins[np.asarray(sidx)]).std()
+    bins_mean = sgdf['lfc'][
+        np.asarray(sidx)
+    ].groupby(bins[np.asarray(sidx)]).mean()
+    bins_mean[bins_std.isna()] = 0
+    bins_std = bins_std.replace(
+        np.nan, sgdf['lfc'][np.asarray(sidx)].std()
+    )
+    sgdf = sgdf.assign(
+        lfc_mean=np.array(
+            bins_mean[np.asarray(bins)]
+        ),
+        lfc_std=np.array(
+            bins_std[np.asarray(bins)]
+        )
+    )
 
     # ------------------
     # Step 4: Considering barcode direction
@@ -68,15 +90,15 @@ def zfoldchange(data,
     )
 
     sgdf['barcode_same_direction'] = np.asarray(
-        sgdf.groupby('sgrna')[
+        sgdf.groupby('guide')[
             'upper_or_zero', 'lower_or_zero'
-        ].all().any(axis=1)[sgdf['sgrna']]
+        ].all().any(axis=1)[sgdf['guide']]
     )
 
     sgdf['max_lfc_std'] = np.asarray(
-        sgdf.groupby('sgrna')[
+        sgdf.groupby('guide')[
             'lfc_std'
-        ].max()[sgdf['sgrna']]
+        ].max()[sgdf['guide']]
     )
 
     sgdf['lfc_std_modified'] = (
