@@ -9,6 +9,7 @@ from .statsfunc import bonferroni_correction
 
 def zfoldchange(data,
                 punish_rate=0.5,
+                zero_sd_n=1.2,
                 iteration=100):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
@@ -57,36 +58,38 @@ def zfoldchange(data,
         )
     )
 
-    bins = pd.cut(refnorm, 200).astype(str)
+    bins = pd.cut(refnorm, 100).astype(str)
+    bins_count = bins.value_counts()
 
     bins_std = sgdf['lfc'][
         np.asarray(sidx)
     ].groupby(bins[np.asarray(sidx)]).std()
-    bins_mean = sgdf['lfc'][
-        np.asarray(sidx)
-    ].groupby(bins[np.asarray(sidx)]).mean()
-    bins_mean[bins_std.isna()] = 0
     bins_std = bins_std.replace(
         np.nan, sgdf['lfc'][np.asarray(sidx)].std()
     )
+
     sgdf = sgdf.assign(
-        lfc_mean=np.array(
-            bins_mean[np.asarray(bins)]
-        ),
         lfc_std=np.array(
             bins_std[np.asarray(bins)]
         )
     )
 
+    lm = stats.linregress(
+        sgdf['ctrl'][bins[bins.isin((bins_count > 500).index)].index],
+        sgdf['lfc_std'][bins[bins.isin((bins_count > 500).index)].index]
+    )
+
+    sgdf['lfc_std'] = sgdf['ctrl'] * lm[0] + lm[1]
+
     # ------------------
     # Step 4: Considering barcode direction
 
     sgdf['upper_or_zero'] = (
-        sgdf['lfc'] >= (sgdf['lfc_std'] * (-1.2))
+        sgdf['lfc'] >= (sgdf['lfc_std'] * (-zero_sd_n))
     )
 
     sgdf['lower_or_zero'] = (
-        sgdf['lfc'] <= (sgdf['lfc_std'] * 1.2)
+        sgdf['lfc'] <= (sgdf['lfc_std'] * zero_sd_n)
     )
 
     sgdf['barcode_same_direction'] = np.asarray(
@@ -112,9 +115,7 @@ def zfoldchange(data,
     # ------------------
     # Step 5: Calculate zscore of fold change
 
-    sgdf['zlfc'] = (
-        sgdf['lfc'] - sgdf['lfc_mean']
-    ) / sgdf['lfc_std_modified']
+    sgdf['zlfc'] = sgdf['lfc'] / sgdf['lfc_std_modified']
 
     # Calculate P value using normal distribution
     sgdf['p'] = stats.norm.cdf(sgdf['zlfc'])

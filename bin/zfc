@@ -1,0 +1,100 @@
+#! /usr/bin/env python3
+
+import argparse
+import zfc
+
+# ------------------
+parser = argparse.ArgumentParser(
+    prog='zfc',
+    description='Calculate fold change of screening data ' +
+    '(zscore log2 fold change).'
+)
+
+parser.add_argument(
+    '-i', '--input',
+    action='store',
+    help='Raw count table with header should include' +
+    ': <gene>, <guide>, <barcode>, <ctrl>, <exp>.' +
+    '<ctrl> is the raw counts of control group, ' +
+    '<exp> is the raw counts of treatment group. ' +
+    ' For screening without barcode, ' +
+    'the barcode column can be the same with guide.'
+)
+
+parser.add_argument(
+    '-o', '--outprefix',
+    action='store',
+    default='zfc_out',
+    help='Output file prefix, ' +
+    'can be the file directory path with file name prefix.' +
+    ' The directory in the outprefix should be built before analysis.'
+)
+
+parser.add_argument(
+    '--punish-rate',
+    type=float,
+    action='store',
+    default=0.5,
+    help='The punish rate used in the punish of inconsistent barcode reads. ' +
+    'The value should better be in [0, 1], ' +
+    'the larger the harsher of the punishment, ' +
+    'default to be 0.5.'
+)
+
+parser.add_argument(
+    '--n-sd',
+    type=float,
+    action='store',
+    default=1.2,
+    help='The lfc within n-sd sds should be consider similar to 0. ' +
+    'The value should better be in (0, 2], ' +
+    'The smaller the strict of the estimation, ' +
+    'default to be 1.2.'
+)
+
+parser.add_argument(
+    '--null-iteration',
+    type=int,
+    action='store',
+    default=100,
+    help='The iteration to generate null distribution ' +
+    'in calculating the p value of genes. ' +
+    'The larger the better, but slower in calculation, ' +
+    'default to be 100.'
+)
+
+parser.add_argument(
+    '--version', action='version', version='%(prog)s version: ' + zfc.__version__
+)
+
+args = vars(parser.parse_args())
+
+# ------------------
+
+inputdata = zfc.read_raw_count(
+    args['input'],
+    gene_colname='gene',
+    guide_colname='guide',
+    barcode_colname='barcode',
+    ctrl_colname='ctrl',
+    exp_colname='exp'
+)
+
+sgresult, gresult = zfc.zfoldchange(
+    inputdata,
+    punish_rate=args['punish_rate'],
+    zero_sd_n=args['n_sd'],
+    iteration=args['null_iteration']
+)
+
+zfc.write_sgresult(
+    sgresult,
+    '_'.join([args['outprefix'], 'sgrna.txt'])
+)
+
+zfc.write_gresult(
+    gresult,
+    '_'.join([args['outprefix'], 'gene.txt'])
+)
+
+# ------------------
