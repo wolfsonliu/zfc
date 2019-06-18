@@ -64,22 +64,23 @@ def zfoldchange(data,
     bins_std = sgdf['lfc'][
         np.asarray(sidx)
     ].groupby(bins[np.asarray(sidx)]).std()
-    bins_std = bins_std.replace(
-        np.nan, sgdf['lfc'][np.asarray(sidx)].std()
-    )
+    bins_std[bins_count < (bins_count.sum() / 400)] = np.nan
+
+    bins_mean = sgdf['lfc'][
+        np.asarray(sidx)
+    ].groupby(bins[np.asarray(sidx)]).mean()
 
     sgdf = sgdf.assign(
+        lfc_mean=np.array(
+            bins_mean[np.asarray(bins)]
+        ),
         lfc_std=np.array(
             bins_std[np.asarray(bins)]
         )
     )
 
-    lm = stats.linregress(
-        sgdf['ctrl'][bins[bins.isin((bins_count > 500).index)].index],
-        sgdf['lfc_std'][bins[bins.isin((bins_count > 500).index)].index]
-    )
-
-    sgdf['lfc_std'] = sgdf['ctrl'] * lm[0] + lm[1]
+    na_std = sgdf['lfc'][sgdf['lfc_std'].isna()].std()
+    sgdf.loc[sgdf['lfc_std'].isna(), 'lfc_std'] = na_std
 
     # ------------------
     # Step 4: Considering barcode direction

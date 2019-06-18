@@ -36,7 +36,7 @@ setup(
     license='GPL',
     packages=['zfc'],
     install_requires=[
-        'numpy>=1.10', 'scipy>=1.0', 'pandas>=0.16'
+        'numpy>=1.10', 'scipy>=1.0', 'pandas>=0.16', 'matplotlib>=2.0.0'
     ],
     scripts=['bin/zfc'],
     package_dir={'zfc': 'zfc'},

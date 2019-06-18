@@ -64,7 +64,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--version', action='version', version='%(prog)s version: ' + zfc.__version__
+    '--plot',
+    action='store_true',
+    help='Output figures.'
+)
+
+parser.add_argument(
+    '--version', action='version',
+    version='%(prog)s version: ' + zfc.__version__
 )
 
 args = vars(parser.parse_args())
@@ -96,5 +103,10 @@ zfc.write_gresult(
     gresult,
     '_'.join([args['outprefix'], 'gene.txt'])
 )
+
+if args['plot']:
+    zfc.zfc_plot(
+        args['outprefix'], inputdata, sgresult, gresult, args['punish_rate']
+    )
 
 # ------------------
