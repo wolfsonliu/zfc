@@ -53,6 +53,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--top-n',
+    type=int,
+    action='store',
+    default=None,
+    help='Only consider top n for each gene. ' +
+    'Default to use all the data.'
+)
+
+parser.add_argument(
     '--null-iteration',
     type=int,
     action='store',
@@ -91,6 +100,7 @@ sgresult, gresult = zfc.zfoldchange(
     inputdata,
     punish_rate=args['punish_rate'],
     zero_sd_n=args['n_sd'],
+    topn=args['top_n'],
     iteration=args['null_iteration']
 )
 

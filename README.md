@@ -159,6 +159,55 @@ A1CF	CCAAGCTATATCCTGTGCGC	CCAAGCTATATCCTGTGCGC	353	367
 ```
 
 
+## Algorithm ##
+
+The ZFC analysis algorithm adopts the z-score of log2 fold change as
+the judgement of the sgRNA and gene changes between reference groups
+and experiment groups.
+
+### Step 1: Normalization of raw counts ###
+
+We use total counts for the normalization of raw counts, to rectify
+the batch sequencing deptch. Because some sgRNAs in the reference have
+very low raw counts, which can affect the fold change calculation of
+the following analysis. We define sgRNAs counts less than
+0.05 quantile both in reference group and experiment group as the
+small count sgRNAs. The mean of all the small count sgNRAs were added
+to the normalized counts.
+
+### Step 2: Calculate fold change ###
+
+The raw fold change of each sgRNA (sgRNA with barcode) is calculated
+from the normalized counts of reference and experiment groups.
+
+### Step 3: Calculate fold change std ###
+
+In order to calculate z-score of log fold change, the standard
+deviation of log fold change should be calculated. For sgRNAs with
+different normalized counts of reference group, the standard
+deviations are different. So, the standard deviations of log fold
+change are calculated among different groups of reference normalized
+counts.
+
+### Step 4: Considering barcode direction ###
+
+ZFC supports the analysis of library with [ibar][1]. In ZFC, the
+barcodes of sgRNAs is used as the internal replicats. For sgRNAs with
+inconsistent barcodes fold change, the standard deviations are
+enlarged as the punishment. The punishment rate can be modified. And
+the numbers of standard deviation to be considered as no different
+from zero can also be setted for the judgement of barcodes consistency.
+
+### Step 5: Calculate zscore of fold change ###
+
+The modified standard deviations are used to calcualte the z-score of
+log fold changes (zlfc) of sgRNAs (sgRNAs with barcodes).
+
+### Step 6: Calculate gene mean zscore of fold change ###
+
+The gene level z-score log fold changes (zlfc) are calculated as the mean of
+all the zlfc of the relevant sgRNAs (sgRNAs with barcodes).
+
 ### Reference ###
 
 [1]: Zhu, S. et al. [Guide RNAs with embedded barcodes boost CRISPR-pooled screens](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1628-0). *Genome Biology* **20**, (2019).

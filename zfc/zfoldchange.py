@@ -5,11 +5,15 @@ from .statsfunc import df_normalization
 from .statsfunc import df_smallcount
 from .statsfunc import ecdf
 from .statsfunc import bonferroni_correction
+from .statsfunc import mean_rank_aggregation
+from .statsfunc import rank_order_aggregation
+from .statsfunc import robust_rank_aggregation
 
 
 def zfoldchange(data,
                 punish_rate=0.5,
                 zero_sd_n=1.2,
+                topn=None,
                 iteration=100):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
@@ -48,14 +52,21 @@ def zfoldchange(data,
     # Step 3: Calculate fold change std
 
     refnorm = sgdf['ctrl']
+    # calculate 5 bins from 10 bins cutting mean and std
+    # to avoid the extreme value in positive screening
+    bins10 = pd.cut(sgdf['lfc'], bins=10)
+
+    lfcmean = sgdf['lfc'].loc[
+        bins10.isin(bins10.value_counts(ascending=False).iloc[0:3].index)
+    ].mean()
+    lfcstd = sgdf['lfc'].loc[
+        bins10.isin(bins10.value_counts(ascending=False).iloc[0:3].index)
+    ].std()
+
     sidx = (
-        sgdf['lfc'] <= (
-            sgdf['lfc'].mean() + 2.5 * sgdf['lfc'].std()
-        )
+        sgdf['lfc'] <= (lfcmean + 2.5 * lfcstd)
     ) & (
-        sgdf['lfc'] >= (
-            sgdf['lfc'].mean() - 2.5 * sgdf['lfc'].std()
-        )
+        sgdf['lfc'] >= (lfcmean - 2.5 * lfcstd)
     )
 
     bins = pd.cut(refnorm, 100).astype(str)
@@ -85,17 +96,23 @@ def zfoldchange(data,
     # ------------------
     # Step 4: Considering barcode direction
 
-    sgdf['upper_or_zero'] = (
-        sgdf['lfc'] >= (sgdf['lfc_std'] * (-zero_sd_n))
+    sgdf['upper'] = (
+        sgdf['lfc'] >= (sgdf['lfc_std'] * zero_sd_n)
     )
 
-    sgdf['lower_or_zero'] = (
+    sgdf['lower'] = (
+        sgdf['lfc'] <= (sgdf['lfc_std'] * (-zero_sd_n))
+    )
+
+    sgdf['zero'] = (
+        sgdf['lfc'] >= (sgdf['lfc_std'] * (-zero_sd_n))
+    ) & (
         sgdf['lfc'] <= (sgdf['lfc_std'] * zero_sd_n)
     )
 
     sgdf['barcode_same_direction'] = np.asarray(
         sgdf.groupby('guide')[
-            'upper_or_zero', 'lower_or_zero'
+            'upper', 'lower', 'zero'
         ].all().any(axis=1)[sgdf['guide']]
     )
 
@@ -110,8 +127,9 @@ def zfoldchange(data,
     ) * sgdf['max_lfc_std'] * punish_rate + sgdf['lfc_std']
 
     del sgdf['max_lfc_std']
-    del sgdf['upper_or_zero']
-    del sgdf['lower_or_zero']
+    del sgdf['upper']
+    del sgdf['lower']
+    del sgdf['zero']
 
     # ------------------
     # Step 5: Calculate zscore of fold change
@@ -166,5 +184,40 @@ def zfoldchange(data,
     )
     gdf['FDR'] = bonferroni_correction(gdf['p'])
     del gdf['tp']
+
+    # Rank aggregation
+    if topn is None:
+        topn = int(sgdf.groupby('gene')['barcode'].count().median())
+
+    sgdf['rank_down'] = sgdf['zlfc'].rank(
+        method='average', ascending=True
+    ) / len(sgdf['zlfc'])
+    sgdown = sgdf[['gene', 'rank_down']]
+    sgdown = sgdown.assign(
+        groupid=sgdown.groupby('gene')['rank_down'].rank(
+            method='first', ascending=True
+        ).astype(int)
+    ).set_index(['gene', 'groupid'])
+    sgdown = sgdown.unstack()
+    sgdown.columns = sgdown.columns.levels[1]
+    sgdown = sgdown[list(range(1, topn + 1))]
+
+    sgdf['rank_up'] = sgdf['zlfc'].rank(
+        method='average', ascending=False
+    ) / len(sgdf['zlfc'])
+    sgup = sgdf[['gene', 'rank_up']]
+    sgup = sgup.assign(
+        groupid=sgup.groupby('gene')['rank_up'].rank(
+            method='first', ascending=False
+        ).astype(int)
+    ).set_index(['gene', 'groupid'])
+    sgup = sgup.unstack()
+    sgup.columns = sgup.columns.levels[1]
+    sgup = sgup[list(range(1, topn + 1))]
+
+    gdf['RRA_Score_down'] = robust_rank_aggregation(sgdown)
+    gdf['RRA_Score_up'] = robust_rank_aggregation(sgup)
+    gdf['MeanRank_Score_down'] = mean_rank_aggregation(sgdown)
+    gdf['MeanRank_Score_up'] = mean_rank_aggregation(sgup)
 
     return (sgdf, gdf)
