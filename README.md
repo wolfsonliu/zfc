@@ -162,52 +162,114 @@ A1CF	CCAAGCTATATCCTGTGCGC	CCAAGCTATATCCTGTGCGC	353	367
 ## Algorithm ##
 
 The ZFC analysis algorithm adopts the z-score of log2 fold change as
-the judgement of the sgRNA and gene changes between reference groups
-and experiment groups.
+the judgement of the sgRNA and gene changes between reference group
+(without treatment) and experiment group (with treatment). ZFC
+supports screening with [iBAR][1] employed, as well as conventional
+screening with replicates. The sgRNA with replicates and sgRNA-iBAR is
+treated with similar procedure.
 
 ### Step 1: Normalization of raw counts ###
 
 We use total counts for the normalization of raw counts, to rectify
 the batch sequencing deptch. Because some sgRNAs in the reference have
 very low raw counts, which can affect the fold change calculation of
-the following analysis. We define sgRNAs counts less than
-0.05 quantile both in reference group and experiment group as the
-small count sgRNAs. The mean of all the small count sgNRAs were added
-to the normalized counts.
+the following analysis. We define sgRNAs counts less than 0.05
+quantile both in reference group and experiment group as the small
+count sgRNAs. The mean counts of all the small count sgNRAs were added
+to the normalized counts. The normalized counts is calculated as
+following expression:
+
+```{latex}
+$$Cn_{i} = \frac{Cr_{i}}{S_{ref}} \times 0.5 \times (S_{ref} + S_{exp})$$
+$$C_{i} = Cn_{i} + Cm_{small}$$
+```
+
+where, `$Cn_{i}$` is the normalized count of ith sgRNA-iBAR in
+reference group, `$Cr_{i}$` is the raw count of ith sgRNA-iBAR,
+`$Cm_{small}$` is the mean counts of all the small count sgRNAs,
+`$S_{ref}$` is the sum of raw counts of all the sgRNA-iBAR in reference
+group, `$S_{exp}$` is the sum of raw counts of all the sgRNA-iBAR in
+experiment group, `$C_{i}$` is the final normalized counts for ith
+sgRNA-iBAR after small count adjustment.
+
 
 ### Step 2: Calculate fold change ###
 
-The raw fold change of each sgRNA (sgRNA with barcode) is calculated
-from the normalized counts of reference and experiment groups.
+The raw fold change of each sgRNA-iBAR is calculated from the
+normalized counts of reference and experiment groups.
+
+```{latex}
+$$fc_{i} = \frac{Cref_{i}}{Cexp_{i}}$$
+$$lfc_{i} = \log_{2}fc_{i}$$
+```
+
+where, `$fc_{i}$` is the fold change (FC) of ith sgRNA-iBAR and `$lfc_{i}$`
+is the log2 fold change (LFC) of ith sgRNA-iBAR, `$Cref_{i}$` and
+`$Cexp_{i}$` are the normalized counts of reference and experiment
+groups respectively.
 
 ### Step 3: Calculate fold change std ###
 
-In order to calculate z-score of log fold change, the standard
-deviation of log fold change should be calculated. For sgRNAs with
-different normalized counts of reference group, the standard
-deviations are different. So, the standard deviations of log fold
-change are calculated among different groups of reference normalized
-counts.
+In order to calculate z-score of LFC (ZLFC), the standard
+deviation of LFC should be calculated. The LFC
+of sgRNA-iBAR is related to the normalized counts of reference
+group. So the standard deviations of LFC are different for
+sgRNA-iBARs with different normalized counts of reference group. All
+the sgRNA-iBARs are divided into several sets according to the
+normalized counts of reference group. And the standard deviations of log
+fold change are calculated among the divided sets.
 
 ### Step 4: Considering barcode direction ###
 
-ZFC supports the analysis of library with [ibar][1]. In ZFC, the
-barcodes of sgRNAs is used as the internal replicats. For sgRNAs with
-inconsistent barcodes fold change, the standard deviations are
-enlarged as the punishment. The punishment rate can be modified. And
-the numbers of standard deviation to be considered as no different
-from zero can also be setted for the judgement of barcodes consistency.
+[iBAR][1] acts as the internal replicates in CRISPR library
+screening. The consistency of iBARs for one sgRNA implies the
+confidence of the LFC of the sgRNA. For sgRNAs with
+inconsistent barcodes fold change, the LFC might be
+affected by free-rider effects or other reasons. So, the score of
+sgRNAs with inconsistent sgRNA-iBARs should be punished. Using z-score
+of LFC, the adjustment of LFC standard
+deviations can be used as the punishment. The larger the standard
+deviations, the smaller the absolute values of LFC
+z-score. Punishment rate can be modified according to library
+screening conditions. For positive screening, free-rider being a
+significant problem, a large punishment rate should be assigned. While
+for negative screening, smaller punishment rate is appropriate.
+
+```{latex}
+$$std_{modified} = std_{sets} + std_{sgRNA} \times r$$
+```
+where `$std_{modified}$` is the adjusted standard deviation of log
+fold change for sgRNA-iBARs with inconsistent LFC direction,
+`$std_{sets}$` is the raw standard deviation of the
+sgRNA-iBARs sets, `$std_{sgRNA}$` is the standard deviation of log fold
+change of all the sgRNA-iBARs for one sgRNA, `$r$`.
 
 ### Step 5: Calculate zscore of fold change ###
 
-The modified standard deviations are used to calcualte the z-score of
-log fold changes (zlfc) of sgRNAs (sgRNAs with barcodes).
+The modified standard deviations are used to calcualte the ZLFCs of
+sgRNA-iBARs. To be note, in the calculation of the ZLFC, the mean of
+LFCs is not substracted from the LFCs.
+
+```{latex}
+$$ZLFC = \frac{LFC}{std_{modified}}$$
+```
+
 
 ### Step 6: Calculate gene mean zscore of fold change ###
 
-The gene level z-score log fold changes (zlfc) are calculated as the mean of
-all the zlfc of the relevant sgRNAs (sgRNAs with barcodes).
+The gene level ZLFCs are calculated as the mean of all the ZLFCs of
+the relevant sgRNA-iBARs. Empirical P value is also calculated for the
+gene ZLFCs.
+
+### Step 7: Robust rank aggregation analysis ###
+
+[Robust rank aggregation][2] is utilized to calculate the rank
+significance of the gene with the sgRNA-iBARs in the whole
+library. Aside from robust rank aggregation, mean rank aggregation is
+also calculated.
 
 ### Reference ###
 
 [1]: Zhu, S. et al. [Guide RNAs with embedded barcodes boost CRISPR-pooled screens](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1628-0). *Genome Biology* **20**, (2019).
+
+[2]: Kolde, R., Laur, S., Adler, P. & Vilo, J. [Robust rank aggregation for gene list integration and meta-analysis](http://bioinformatics.oxfordjournals.org/content/28/4/573.abstract). *Bioinformatics* **28**, 573–580 (2012).

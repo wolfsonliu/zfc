@@ -2,6 +2,12 @@ build/
 dist/
 zfc.egg-info/
 zfc/__pycache__/
+doc/auto
+*.aux
+*.bbl
+*.log
+*.pdf
+*.blg
 
 *~
 *.o

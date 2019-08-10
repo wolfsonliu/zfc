@@ -32,7 +32,9 @@ def write_sgresult(data, filepath):
 
 def write_gresult(data, filepath):
     data[[
-        'zlfc', 'count', 'p', 'FDR'
+        'zlfc', 'count', 'p', 'FDR', 
+        'RRA_Score_down', 'RRA_Score_up', 
+        'MeanRank_Score_down', 'MeanRank_Score_up' 
     ]].sort_values(
         'zlfc', ascending=True
     ).to_csv(filepath, index=True, sep='\t')

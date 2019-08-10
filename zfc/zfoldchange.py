@@ -19,7 +19,7 @@ def zfoldchange(data,
 
     for x in ['gene', 'guide', 'barcode', 'ctrl', 'exp']:
         assert x in data.columns, 'data should have column: {}'.format(x)
-
+    data.replace(np.nan, 0, inplace=True)
     # ------------------
     # Step 1: Normalization of raw counts
     norm = df_normalization(
@@ -185,7 +185,8 @@ def zfoldchange(data,
     gdf['FDR'] = bonferroni_correction(gdf['p'])
     del gdf['tp']
 
-    # Rank aggregation
+    # ------------------
+    # Step 7: Rank aggregation
     if topn is None:
         topn = int(sgdf.groupby('gene')['barcode'].count().median())
 
