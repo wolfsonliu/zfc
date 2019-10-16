@@ -31,25 +31,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--punish-rate',
+    '--leverage-threshold',
     type=float,
     action='store',
-    default=0.5,
-    help='The punish rate used in the punish of inconsistent barcode reads. ' +
-    'The value should better be in [0, 1], ' +
-    'the larger the harsher of the punishment, ' +
-    'default to be 0.5.'
-)
-
-parser.add_argument(
-    '--n-sd',
-    type=float,
-    action='store',
-    default=1.2,
-    help='The lfc within n-sd sds should be consider similar to 0. ' +
-    'The value should better be in (0, 2], ' +
-    'The smaller the strict of the estimation, ' +
-    'default to be 1.2.'
+    default=0.7,
+    help='Leverage threshold for justify of outliers. ' +
+    'The barcodes with leverage larger than threshold ' +
+    'will be consider as ourliers. ' +
+    'Default is 0.7.'
 )
 
 parser.add_argument(
@@ -98,8 +87,7 @@ inputdata = zfc.read_raw_count(
 
 sgresult, gresult = zfc.zfoldchange(
     inputdata,
-    punish_rate=args['punish_rate'],
-    zero_sd_n=args['n_sd'],
+    leverage_threshold=args['leverage_threshold'],
     topn=args['top_n'],
     iteration=args['null_iteration']
 )
@@ -116,7 +104,7 @@ zfc.write_gresult(
 
 if args['plot']:
     zfc.zfc_plot(
-        args['outprefix'], inputdata, sgresult, gresult, args['punish_rate']
+        args['outprefix'], inputdata, sgresult, gresult
     )
 
 # ------------------

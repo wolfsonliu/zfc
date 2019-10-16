@@ -60,45 +60,46 @@ and experiment groups respectively.
 In order to calculate z-score of LFC (ZLFC), the standard deviation of
 LFC should be calculated. The LFC of sgRNA$^{iBAR}$ is related to the
 normalized counts of reference group. So the standard deviations of
-LFC are different for sgRNA$^{iBAR}$s with different normalized counts
-of reference group. All the sgRNA$^{iBAR}$s are divided into several
-sets according to the normalized counts of reference group. And the
+LFC are different for sgRNA$^{iBAR}$s with different normalized counts of
+reference group. All the sgRNA$^{iBAR}$s are divided into several sets
+according to the normalized counts of reference group. And the
 standard deviations of log fold change are calculated among the
-divided sets.
+divided sets. The LFC standard diviation and the normalized counts of
+the reference is linearly related. So, linear model is calculated for
+the LFC sd and reference counts. And the linear model is used to
+calculate the LFC standard diviation for all the sgRNA$^{iBAR}$.
 
-\section{Considering barcode direction}
+\section{Raw z score of log fold change}
+
+The raw z score of log fold change is calculated.
+
+$$raw ZLFC = \frac{LFC}/{LFC std}$$
+
+\section{Modify sgRNA$^{iBAR}$ ZLFC with large leverage}
+
+The leverage of the Raw ZLFC of sgRNA$^{iBAR}$ to the sgRNA mean ZLFC is
+calcualted to distinguish the possible free-rider
+sgRNA$^{iBAR}$s. sgRNA$^{iBAR}$s raw ZLFC with leverage larger than the
+threshold is modified.
+
+$$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
+
+where `$Leverage_{i}$` is the `$i$th` sgRNA$^{iBAR}$ for one sgRNA, `$n$`
+is the number of sgRNA$^{iBAR}$s for the sgRNA, `$\={x}$` is the mean of
+the sgRNA$^{iBAR}$s' raw ZLFC.
+
+In order to modify the high leverage sgRNA$^{iBAR}$, we calculated the
+modification ratio by the leverage.
+
+$$Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
+
+The raw ZLFC of one sgRNA$^{iBAR}$ is multiplied by the ratio to generate
+the modified ZLFC.
 
 
-iBAR\citep{zhu_guide_2019} acts as the internal replicates in
-CRISPR library screening. The consistency of iBARs for one sgRNA
-implies the confidence of the LFC of the sgRNA. For sgRNAs with
-inconsistent barcodes fold change, the LFC might be affected by
-free-rider effects or other reasons. So, the score of sgRNAs with
-inconsistent sgRNA$^{iBAR}$s should be punished. Using z-score of LFC,
-the adjustment of LFC standard deviations can be used as the
-punishment. The larger the standard deviations, the smaller the
-absolute values of LFC z-score. Punishment rate can be modified
-according to library screening conditions. For positive screening,
-free-rider being a significant problem, a large punishment rate should
-be assigned. While for negative screening, smaller punishment rate is
-appropriate.
+\section{Calculate zscore of fold change p value in normal distribution}
 
-$$std_{modified} = std_{sets} + std_{sgRNA} \times r$$
-
-where $std_{modified}$ is the adjusted standard deviation of log
-fold change for sgRNA$^{iBAR}$s with inconsistent LFC direction,
-$std_{sets}$ is the raw standard deviation of the
-sgRNA$^{iBAR}$s sets, $std_{sgRNA}$ is the standard deviation of log fold
-change of all the sgRNA$^{iBAR}$s for one sgRNA, $r$.
-
-\section{Calculate zscore of fold change}
-
-
-The modified standard deviations are used to calcualte the ZLFCs of
-sgRNA$^{iBAR}$s. To be note, in the calculation of the ZLFC, the mean of
-LFCs is not substracted from the LFCs.
-
-$$ZLFC = \frac{LFC}{std_{modified}}$$
+Calculate sgRNA$^{iBAR}$ ZLFC p value from normal distribution.
 
 
 \section{Calculate gene mean zscore of fold change}

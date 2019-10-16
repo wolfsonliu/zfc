@@ -14,7 +14,8 @@ in Linux, Mac OS, and Windows.
 * numpy >= 1.10
 * scipy >= 1.0
 * pandas >= 0.16
-* matplotlib >= 2.0.0
+* matplotlib >= 2.0
+* sklearn >= 0.20
 
 ## Installation ##
 
@@ -210,58 +211,62 @@ groups respectively.
 
 ### Step 3: Calculate fold change std ###
 
-In order to calculate z-score of LFC (ZLFC), the standard
-deviation of LFC should be calculated. The LFC
-of sgRNA-iBAR is related to the normalized counts of reference
-group. So the standard deviations of LFC are different for
-sgRNA-iBARs with different normalized counts of reference group. All
-the sgRNA-iBARs are divided into several sets according to the
-normalized counts of reference group. And the standard deviations of log
-fold change are calculated among the divided sets.
+In order to calculate z-score of LFC (ZLFC), the standard deviation of
+LFC should be calculated. The LFC of sgRNA-iBAR is related to the
+normalized counts of reference group. So the standard deviations of
+LFC are different for sgRNA-iBARs with different normalized counts of
+reference group. All the sgRNA-iBARs are divided into several sets
+according to the normalized counts of reference group. And the
+standard deviations of log fold change are calculated among the
+divided sets. The LFC standard diviation and the normalized counts of
+the reference is linearly related. So, linear model is calculated for
+the LFC sd and reference counts. And the linear model is used to
+calculate the LFC standard diviation for all the sgRNA-iBAR.
 
-### Step 4: Considering barcode direction ###
+### Step 4: Raw z score of log fold change ###
 
-[iBAR][1] acts as the internal replicates in CRISPR library
-screening. The consistency of iBARs for one sgRNA implies the
-confidence of the LFC of the sgRNA. For sgRNAs with
-inconsistent barcodes fold change, the LFC might be
-affected by free-rider effects or other reasons. So, the score of
-sgRNAs with inconsistent sgRNA-iBARs should be punished. Using z-score
-of LFC, the adjustment of LFC standard
-deviations can be used as the punishment. The larger the standard
-deviations, the smaller the absolute values of LFC
-z-score. Punishment rate can be modified according to library
-screening conditions. For positive screening, free-rider being a
-significant problem, a large punishment rate should be assigned. While
-for negative screening, smaller punishment rate is appropriate.
+The raw z score of log fold change is calculated.
 
 ```{latex}
-$$std_{modified} = std_{sets} + std_{sgRNA} \times r$$
+$$raw ZLFC = \frac{LFC}/{LFC std}$$
 ```
-where `$std_{modified}$` is the adjusted standard deviation of log
-fold change for sgRNA-iBARs with inconsistent LFC direction,
-`$std_{sets}$` is the raw standard deviation of the
-sgRNA-iBARs sets, `$std_{sgRNA}$` is the standard deviation of log fold
-change of all the sgRNA-iBARs for one sgRNA, `$r$`.
 
-### Step 5: Calculate zscore of fold change ###
+### Step 5: Modify sgRNA-iBAR ZLFC with large leverage ###
 
-The modified standard deviations are used to calcualte the ZLFCs of
-sgRNA-iBARs. To be note, in the calculation of the ZLFC, the mean of
-LFCs is not substracted from the LFCs.
+The leverage of the Raw ZLFC of sgRNA-iBAR to the sgRNA mean ZLFC is
+calcualted to distinguish the possible free-rider
+sgRNA-iBARs. sgRNA-iBARs raw ZLFC with leverage larger than the
+threshold is modified.
 
 ```{latex}
-$$ZLFC = \frac{LFC}{std_{modified}}$$
+$$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
 ```
 
+where `$Leverage_{i}$` is the `$i$th` sgRNA-iBAR for one sgRNA, `$n$`
+is the number of sgRNA-iBARs for the sgRNA, `$\={x}$` is the mean of
+the sgRNA-iBARs' raw ZLFC.
 
-### Step 6: Calculate gene mean zscore of fold change ###
+In order to modify the high leverage sgRNA-iBAR, we calculated the
+modification ratio by the leverage.
+
+```{latext}
+$$Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
+```
+
+The raw ZLFC of one sgRNA-iBAR is multiplied by the ratio to generate
+the modified ZLFC.
+
+### Step 6: Calculate zscore of fold change p value in normal distribution ###
+
+Calculate sgRNA-iBAR ZLFC p value from normal distribution.
+
+### Step 7: Calculate gene mean zscore of fold change ###
 
 The gene level ZLFCs are calculated as the mean of all the ZLFCs of
 the relevant sgRNA-iBARs. Empirical P value is also calculated for the
 gene ZLFCs.
 
-### Step 7: Robust rank aggregation analysis ###
+### Step 8: Robust rank aggregation analysis ###
 
 [Robust rank aggregation][2] is utilized to calculate the rank
 significance of the gene with the sgRNA-iBARs in the whole

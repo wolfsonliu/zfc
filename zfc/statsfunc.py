@@ -80,7 +80,7 @@ def df_normalization(df, method):
     return result
 
 
-def df_smallcount(df, quantile=0.05, drop0=True):
+def df_smallcount(df, quantile=0.1, drop0=True):
     dfquantile = df.quantile(quantile, axis=0)
     smallidx = (df <= dfquantile).all(axis=1)
     smallcount = np.asarray(df[smallidx]).ravel()

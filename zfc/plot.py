@@ -148,25 +148,6 @@ def lfc_std_scatter(sgresult):
     return fig
 
 
-def lfc_std_lfc_std_modified_scatter(sgresult, punish_rate):
-    fig, axes = plt.subplots(1, 1)
-    axes.scatter(
-        sgresult['lfc_std'], sgresult['lfc_std_modified'],
-        color='black', alpha=0.1, edgecolor=''
-    )
-    axes.set_title('Punish rate: {}'.format(punish_rate))
-    axes.set_xlabel('Standard deviation of $log_{2}$ fold change')
-    axes.set_ylabel('Modified standard deviation of $log_{2}$ fold change')
-    xlim = axes.get_xlim()
-    ylim = axes.get_ylim()
-    lim = [min(xlim + ylim), max(xlim + ylim)]
-    axes.set_xlim(lim)
-    axes.set_ylim(lim)
-    axes.plot(lim, lim, linestyle='dotted', color='red')
-    axes.set_aspect(1)
-    return fig
-
-
 def gene_zlfc_hist(gresult):
     fig, axes = plt.subplots(1, 1)
     axes.hist(gresult['zlfc'], bins=100, color='black')
@@ -176,7 +157,7 @@ def gene_zlfc_hist(gresult):
     return fig
 
 
-def zfc_plot(outprefix, inputdata, sgresult, gresult, punish_rate):
+def zfc_plot(outprefix, inputdata, sgresult, gresult):
     fig = counts_boxplot(inputdata, sgresult)
     fig.savefig('_'.join([outprefix, 'counts_boxplot.png']))
     fig.savefig('_'.join([outprefix, 'counts_boxplot.pdf']))
@@ -196,10 +177,6 @@ def zfc_plot(outprefix, inputdata, sgresult, gresult, punish_rate):
     fig = lfc_std_scatter(sgresult)
     fig.savefig('_'.join([outprefix, 'lfc_std_scatter.png']))
     fig.savefig('_'.join([outprefix, 'lfc_std_scatter.pdf']))
-
-    fig = lfc_std_lfc_std_modified_scatter(sgresult, punish_rate)
-    fig.savefig('_'.join([outprefix, 'lfc_std_lfc_scatter.png']))
-    fig.savefig('_'.join([outprefix, 'lfc_std_lfc_scatter.pdf']))
 
     fig = gene_zlfc_hist(gresult)
     fig.savefig('_'.join([outprefix, 'gene_zlfc_hist.png']))

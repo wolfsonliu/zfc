@@ -7,7 +7,7 @@ except ImportError:
     from distutils.core import setup
 
 package = 'zfc'
-version = '0.1.1'
+version = '0.1.2'
 
 
 def readme():
@@ -36,9 +36,14 @@ setup(
     license='GPL',
     packages=['zfc'],
     install_requires=[
-        'numpy>=1.10', 'scipy>=1.0', 'pandas>=0.16', 'matplotlib>=2.0.0'
+        'numpy>=1.10', 'scipy>=1.0', 'pandas>=0.16',
+        'matplotlib>=2.0.0', 'sklearn'
     ],
-    scripts=['bin/zfc', 'bin/library_count_sgrna', 'bin/library_count_sgrna_with_barcode'],
+    scripts=[
+        'bin/zfc',
+        'bin/library_count_sgrna',
+        'bin/library_count_sgrna_with_barcode'
+    ],
     package_dir={'zfc': 'zfc'},
     include_package_data=True,
     zip_safe=False

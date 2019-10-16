@@ -24,7 +24,8 @@ def read_raw_count(filepath,
 def write_sgresult(data, filepath):
     data[[
         'gene', 'guide', 'barcode', 'ctrl', 'exp', 'fc', 'lfc', 'lfc_std',
-        'barcode_same_direction', 'lfc_std_modified', 'zlfc', 'p'
+        'barcode_zlfc_leverage', 'barcode_zlfc_leverage_ratio',
+        'raw_zlfc', 'zlfc', 'p'
     ]].sort_values(
         ['gene', 'guide', 'barcode']
     ).to_csv(filepath, index=False, sep='\t')
@@ -32,9 +33,9 @@ def write_sgresult(data, filepath):
 
 def write_gresult(data, filepath):
     data[[
-        'zlfc', 'count', 'p', 'FDR', 
-        'RRA_Score_down', 'RRA_Score_up', 
-        'MeanRank_Score_down', 'MeanRank_Score_up' 
+        'zlfc', 'zlfc_down', 'zlfc_up',
+        'count', 'count_up', 'count_down',
+        'p', 'FDR', 'RRA_Score_down', 'RRA_Score_up',
     ]].sort_values(
         'zlfc', ascending=True
     ).to_csv(filepath, index=True, sep='\t')
