@@ -26,8 +26,8 @@ very low raw counts, which can affect the fold change calculation of
 the following analysis. We define sgRNAs counts less than 0.05
 quantile both in reference group and experiment group as the small
 count sgRNAs. The mean counts of all the small count sgNRAs were added
-to the normalized counts. The normalized counts is calculated as
-following expression:
+to the normalized counts. The normalized counts for sgRNAs in
+reference group are calculated as following expression:
 
 $$Cn_{i} = \frac{Cr_{i}}{S_{ref}} \times 0.5 \times (S_{ref} + S_{exp})$$
 
@@ -39,8 +39,9 @@ $Cm_{small}$ is the mean counts of all the small count sgRNAs,
 $S_{ref}$ is the sum of raw counts of all the sgRNA$^{iBAR}$ in
 reference group, $S_{exp}$ is the sum of raw counts of all the
 sgRNA$^{iBAR}$ in experiment group, $C_{i}$ is the final normalized
-counts for ith sgRNA$^{iBAR}$ after small count adjustment.
-
+counts for ith sgRNA$^{iBAR}$ after small count adjustment. The
+normalized counts for sgRNAs in experiment group are calculated
+similarly.
 
 \section{Calculate fold change}
 
@@ -60,14 +61,14 @@ and experiment groups respectively.
 In order to calculate z-score of LFC (ZLFC), the standard deviation of
 LFC should be calculated. The LFC of sgRNA$^{iBAR}$ is related to the
 normalized counts of reference group. So the standard deviations of
-LFC are different for sgRNA$^{iBAR}$s with different normalized counts of
-reference group. All the sgRNA$^{iBAR}$s are divided into several sets
-according to the normalized counts of reference group. And the
+LFC are different for sgRNA$^{iBAR}$s with different normalized counts
+of reference group. All the sgRNA$^{iBAR}$s are divided into several
+sets according to the normalized counts of reference group. And the
 standard deviations of log fold change are calculated among the
 divided sets. The LFC standard diviation and the normalized counts of
-the reference is linearly related. So, linear model is calculated for
-the LFC sd and reference counts. And the linear model is used to
-calculate the LFC standard diviation for all the sgRNA$^{iBAR}$.
+the reference is linearly related. So, a linear model is calculated
+for the LFC sd and reference counts. And the linear model is used to
+calculate the LFC standard diviation for all the sgRNA$^{iBAR}$s.
 
 \section{Raw z score of log fold change}
 
@@ -75,26 +76,33 @@ The raw z score of log fold change is calculated.
 
 $$raw ZLFC = \frac{LFC}/{LFC std}$$
 
-\section{Modify sgRNA$^{iBAR}$ ZLFC with large leverage}
+\section{Remove sgRNA$^{iBAR}$ ZLFC with large leverage}
 
 The leverage of the Raw ZLFC of sgRNA$^{iBAR}$ to the sgRNA mean ZLFC is
 calcualted to distinguish the possible free-rider
-sgRNA$^{iBAR}$s. sgRNA$^{iBAR}$s raw ZLFC with leverage larger than the
-threshold is modified.
+sgRNA$^{iBAR}$s. sgRNA$^{iBAR}$s ZLFC with leverage larger than the
+threshold are removed.
 
 $$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
 
 where `$Leverage_{i}$` is the `$i$th` sgRNA$^{iBAR}$ for one sgRNA, `$n$`
 is the number of sgRNA$^{iBAR}$s for the sgRNA, `$\={x}$` is the mean of
-the sgRNA$^{iBAR}$s' raw ZLFC.
+the sgRNA$^{iBAR}$s' ZLFC.
 
-In order to modify the high leverage sgRNA$^{iBAR}$, we calculated the
-modification ratio by the leverage.
 
-$$Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
+% In order to modify the high leverage sgRNA$^{iBAR}$, we calculated the
+% modification ratio by the leverage. The leverage ratio for dropout
+% direction sgRNAs is calcualted as follow:
 
-The raw ZLFC of one sgRNA$^{iBAR}$ is multiplied by the ratio to generate
-the modified ZLFC.
+% $$Dropout Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
+
+% The raw ZLFC of one sgRNA$^{iBAR}$ is multiplied by the ratio to generate
+% the modified ZLFC.
+
+% And for the enrichment sgRNAs, free-rider is a serious problem, so the
+% the leverage ratio is modified with a factor, $\sqrt{n}$, for higher punishment.
+
+% $$Enrichment Leverage Ratio_{i} = \sqrt{n} \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
 
 
 \section{Calculate zscore of fold change p value in normal distribution}
@@ -105,8 +113,16 @@ Calculate sgRNA$^{iBAR}$ ZLFC p value from normal distribution.
 \section{Calculate gene mean zscore of fold change}
 
 The gene level ZLFCs are calculated as the mean of all the ZLFCs of
-the relevant sgRNA$^{iBAR}$s. Empirical P value is also calculated for the
-gene ZLFCs.
+the relevant sgRNA$^{iBAR}$s. Considering the more sgRNAs for a gene
+implying higher confidence on the result, a factor $\sqrt{n}$ is
+multiplied to the mean ZLFCs.
+
+$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n} \times \sqrt{n}$$
+
+Empirical P value is also calculated for the gene ZLFCs. The p value
+is adjusted considering control of False Discovery Rate
+\citep{benjamini_controlling_1995}.
+
 
 \section{Robust rank aggregation analysis}
 
@@ -114,7 +130,10 @@ gene ZLFCs.
 Robust rank aggregation \citep{kolde_robust_2012} is utilized to
 calculate the rank significance of the gene with the sgRNA$^{iBAR}$s
 in the whole library. Aside from robust rank aggregation, mean rank
-aggregation is also calculated.
+aggregation is also calculated. The robust rank score is adjusted
+considering control of Fault Discovery Rate
+\citep{benjamini_controlling_1995}.
+
 
 \bibliography{al}
 

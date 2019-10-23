@@ -34,11 +34,13 @@ parser.add_argument(
     '--leverage-threshold',
     type=float,
     action='store',
-    default=0.7,
+    default=None,
     help='Leverage threshold for justify of outliers. ' +
     'The barcodes with leverage larger than threshold ' +
     'will be consider as ourliers. ' +
-    'Default is 0.7.'
+    'Default is None. ' +
+    'If each sgRNA has only one barcode or replicate, ' +
+    'this parameter should not be set.'
 )
 
 parser.add_argument(

@@ -54,14 +54,12 @@ optional arguments:
                         Output file prefix, can be the file directory path
                         with file name prefix. The directory in the outprefix
                         should be built before analysis.
-  --punish-rate PUNISH_RATE
-                        The punish rate used in the punish of inconsistent
-                        barcode reads. The value should better be in [0, 1],
-                        the larger the harsher of the punishment, default to
-                        be 0.5.
-  --n-sd N_SD           The lfc within n-sd sds should be consider similar to
-                        0. The value should better be in (0, 2], The smaller
-                        the strict of the estimation, default to be 1.2.
+  --leverage-threshold LEVERAGE_THRESHOLD
+                        Leverage threshold for justify of outliers. The
+                        barcodes with leverage larger than threshold will be
+                        consider as ourliers. Default is None. If each sgRNA
+                        has only one barcode or replicate, this parameter
+                        should not be set.
   --null-iteration NULL_ITERATION
                         The iteration to generate null distribution in
                         calculating the p value of genes. The larger the
@@ -188,10 +186,11 @@ $$C_{i} = Cn_{i} + Cm_{small}$$
 where, `$Cn_{i}$` is the normalized count of ith sgRNA-iBAR in
 reference group, `$Cr_{i}$` is the raw count of ith sgRNA-iBAR,
 `$Cm_{small}$` is the mean counts of all the small count sgRNAs,
-`$S_{ref}$` is the sum of raw counts of all the sgRNA-iBAR in reference
-group, `$S_{exp}$` is the sum of raw counts of all the sgRNA-iBAR in
-experiment group, `$C_{i}$` is the final normalized counts for ith
-sgRNA-iBAR after small count adjustment.
+`$S_{ref}$` is the sum of raw counts of all the sgRNA-iBAR in
+reference group, `$S_{exp}$` is the sum of raw counts of all the
+sgRNA-iBAR in experiment group, `$C_{i}$` is the final normalized
+counts for ith sgRNA-iBAR after small count adjustment. The normalized
+counts for sgRNAs in experiment group are calculated similarly.
 
 
 ### Step 2: Calculate fold change ###
@@ -231,30 +230,16 @@ The raw z score of log fold change is calculated.
 $$raw ZLFC = \frac{LFC}/{LFC std}$$
 ```
 
-### Step 5: Modify sgRNA-iBAR ZLFC with large leverage ###
+### Step 5: Remove sgRNA-iBAR ZLFC with large leverage ###
 
 The leverage of the Raw ZLFC of sgRNA-iBAR to the sgRNA mean ZLFC is
 calcualted to distinguish the possible free-rider
 sgRNA-iBARs. sgRNA-iBARs raw ZLFC with leverage larger than the
-threshold is modified.
+threshold are removed.
 
 ```{latex}
 $$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
 ```
-
-where `$Leverage_{i}$` is the `$i$th` sgRNA-iBAR for one sgRNA, `$n$`
-is the number of sgRNA-iBARs for the sgRNA, `$\={x}$` is the mean of
-the sgRNA-iBARs' raw ZLFC.
-
-In order to modify the high leverage sgRNA-iBAR, we calculated the
-modification ratio by the leverage.
-
-```{latext}
-$$Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
-```
-
-The raw ZLFC of one sgRNA-iBAR is multiplied by the ratio to generate
-the modified ZLFC.
 
 ### Step 6: Calculate zscore of fold change p value in normal distribution ###
 
@@ -266,12 +251,21 @@ The gene level ZLFCs are calculated as the mean of all the ZLFCs of
 the relevant sgRNA-iBARs. Empirical P value is also calculated for the
 gene ZLFCs.
 
+```{latex}
+$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n} \times \sqrt{n}$$
+```
+
+Empirical P value is also calculated for the gene ZLFCs. The p value
+is adjusted considering control of False Discovery Rate.
+
+
 ### Step 8: Robust rank aggregation analysis ###
 
 [Robust rank aggregation][2] is utilized to calculate the rank
 significance of the gene with the sgRNA-iBARs in the whole
 library. Aside from robust rank aggregation, mean rank aggregation is
-also calculated.
+also calculated. The robust rank score is adjusted
+considering control of Fault Discovery Rate.
 
 ### Reference ###
 

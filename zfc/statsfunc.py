@@ -43,6 +43,31 @@ def bonferroni_correction(pvals):
     return pvals_corrected
 
 
+def bh_correction(pvals):
+    '''BH multitest p value correction'''
+
+    pvals = np.asarray(pvals)
+    n = len(pvals)
+    pvals_decreasing_argsort = pvals.argsort()[::-1]
+    pvals_reverse_argsort = pvals_decreasing_argsort.argsort()
+    pvals_corrected = np.minimum.accumulate(
+        pvals[pvals_decreasing_argsort] * n / np.arange(n, 0, -1)
+    )[pvals_reverse_argsort]
+    pvals_corrected[pvals_corrected > 1] = 1
+
+    return pvals_corrected
+
+
+def p_adjust(pvals, method='BH'):
+    assert method in ['BH', 'Bonferroni'], 'Adjust method should be in: BH, Bonferroni'
+    adjust_func = {
+        'BH': bh_correction,
+        'Bonferroni': bonferroni_correction
+    }
+
+    return adjust_func[method](pvals)
+
+
 def df_median_ratio_normfactor(df):
     '''
     Normalize input data indicated by the label.

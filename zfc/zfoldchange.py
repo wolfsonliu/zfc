@@ -10,12 +10,13 @@ from sklearn import linear_model
 from .statsfunc import df_normalization
 from .statsfunc import df_smallcount
 from .statsfunc import ecdf
-from .statsfunc import bonferroni_correction
+from .statsfunc import p_adjust
 from .statsfunc import robust_rank_aggregation
+from .statsfunc import mean_rank_aggregation
 
 
 def zfoldchange(data,
-                leverage_threshold=0.7,
+                leverage_threshold=None,
                 topn=None,
                 iteration=100):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
@@ -48,6 +49,7 @@ def zfoldchange(data,
         axis=1, sort=False
     )
     del norm
+
     # ------------------
     # Step 2: Calculate fold change
     sgdf['fc'] = sgdf['exp'] / sgdf['ctrl']
@@ -96,45 +98,35 @@ def zfoldchange(data,
     # ------------------
     # Step 4: Calculate raw zlfc using lfc and lfc_std
 
-    sgdf['raw_zlfc'] = sgdf['lfc'] / sgdf['lfc_std']
+    sgdf['zlfc'] = sgdf['lfc'] / sgdf['lfc_std']
 
     # ------------------
-    # Step 5: Modify sgRNA-iBAR ZLFC with large leverage
+    # Step 5: Drop sgRNA-iBAR ZLFC with large leverage
 
     sgdf['sgrna_zlfc_mean'] = np.asarray(
-        sgdf.groupby('guide')['raw_zlfc'].mean()[sgdf['guide']]
+        sgdf.groupby('guide')['zlfc'].mean()[sgdf['guide']]
     )
     sgdf['sgrna_zlfc_var'] = np.asarray(
-        sgdf.groupby('guide')['raw_zlfc'].var()[sgdf['guide']]
+        sgdf.groupby('guide')['zlfc'].var()[sgdf['guide']]
     )
-    sgdf['sgrna_zlfc_count'] = np.asarray(
-        sgdf.groupby('guide')['raw_zlfc'].count()[sgdf['guide']]
+    sgdf['sgrna_zlfc_total_count'] = np.asarray(
+        sgdf.groupby('guide')['zlfc'].count()[sgdf['guide']]
     )
     # calculate barcode leverage
     sgdf['barcode_zlfc_leverage'] = (
-        sgdf['raw_zlfc'] - sgdf['sgrna_zlfc_mean']
+        sgdf['zlfc'] - sgdf['sgrna_zlfc_mean']
     ) ** 2 / (
-        sgdf['sgrna_zlfc_var'] * (sgdf['sgrna_zlfc_count'] - 1)
-    ) + (1 / sgdf['sgrna_zlfc_count'])
+        sgdf['sgrna_zlfc_var'] * (sgdf['sgrna_zlfc_total_count'] - 1)
+    ) + (1 / sgdf['sgrna_zlfc_total_count'])
 
-    sgdf['barcode_zlfc_leverage_ratio'] = sgdf['sgrna_zlfc_count'] * (
-        2 - sgdf['barcode_zlfc_leverage']
-    ) / (2 * sgdf['sgrna_zlfc_count'] - 2)
+    if leverage_threshold is not None:
+        sgdf = sgdf.loc[
+            sgdf['barcode_zlfc_leverage'] <= leverage_threshold,
+        ]
 
-    sgdf = sgdf.loc[
-        sgdf['barcode_zlfc_leverage'] <= leverage_threshold
-    ]
-
-    # calculate zlfc from raw_zlfc and leverage ratio
-    sgdf['zlfc'] = sgdf['raw_zlfc'] * sgdf['barcode_zlfc_leverage_ratio']
-
-    # replace the infinit number with null
-    sgdf = sgdf.replace([np.inf, -np.inf], np.nan)
-
-    # assign raw_zlfc to zlfc if the zlfc is null
-    sgdf.loc[sgdf['zlfc'].isnull(), 'zlfc'] = sgdf.loc[
-        sgdf['zlfc'].isnull(), 'raw_zlfc'
-    ]
+    sgdf['sgrna_zlfc_remain_count'] = np.asarray(
+        sgdf.groupby('guide')['zlfc'].count()[sgdf['guide']]
+    )
 
     # ------------------
     # Step 6: Calculate zscore of fold change p value in normal distribution
@@ -150,7 +142,9 @@ def zfoldchange(data,
 
     gdf = pd.DataFrame(
         {
-            'zlfc': sgdf.groupby('gene')['zlfc'].mean(),
+            'zlfc': sgdf.groupby('gene')['zlfc'].mean() * np.sqrt(
+                sgdf.groupby('gene')['zlfc'].count()
+            ),
             'count': sgdf.groupby('gene')['zlfc'].count(),
         }
     )
@@ -185,7 +179,7 @@ def zfoldchange(data,
     gdf['p'] = gdf['tp'].map(
         lambda a: a if a <= 0.5 else 1 - a
     )
-    gdf['FDR'] = bonferroni_correction(gdf['p'])
+    gdf['p_adj'] = p_adjust(gdf['p'], 'BH')
     del gdf['tp']
 
     gdf = gdf.assign(
@@ -227,6 +221,13 @@ def zfoldchange(data,
     sgup = sgup[list(range(1, topn + 1))]
 
     gdf['RRA_Score_down'] = robust_rank_aggregation(sgdown)
+    gdf['RRA_Score_down_adj'] = p_adjust(gdf['RRA_Score_down'], 'BH')
     gdf['RRA_Score_up'] = robust_rank_aggregation(sgup)
+    gdf['RRA_Score_up_adj'] = p_adjust(gdf['RRA_Score_up'], 'BH')
+
+    gdf['Mean_Rank_down'] = mean_rank_aggregation(sgdown)
+    gdf['Mean_Rank_down_adj'] = p_adjust(gdf['Mean_Rank_down'], 'BH')
+    gdf['Mean_Rank_up'] = mean_rank_aggregation(sgup)
+    gdf['Mean_Rank_up_adj'] = p_adjust(gdf['Mean_Rank_up'], 'BH')
 
     return (sgdf, gdf)
