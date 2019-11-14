@@ -7,7 +7,7 @@ except ImportError:
     from distutils.core import setup
 
 package = 'zfc'
-version = '0.1.3'
+version = '0.1.4'
 
 
 def readme():

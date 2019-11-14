@@ -114,7 +114,7 @@ def df_smallcount(df, quantile=0.1, drop0=True):
     return smallcount
 
 
-def mean_rank_aggregation(rank_matrix):
+def df_mean_rank_aggregation(rank_matrix):
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
     # meta-analysis. Bioinformatics 28, 573–580.
@@ -134,7 +134,7 @@ def mean_rank_aggregation(rank_matrix):
     return rank_score
 
 
-def rank_order_aggregation(rank_matrix):
+def df_rank_order_aggregation(rank_matrix):
     # Stuart, J.M., Segal, E., Koller, D., and Kim, S.K. (2003). A
     # Gene-Coexpression Network for Global Discovery of Conserved
     # Genetic Modules. Science 302, 249.
@@ -166,7 +166,7 @@ def rank_order_aggregation(rank_matrix):
     return rank_matrix.apply(lambda x: Q(x), axis=1)
 
 
-def robust_rank_aggregation(rank_matrix):
+def df_robust_rank_aggregation(rank_matrix):
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
     # meta-analysis. Bioinformatics 28, 573–580.

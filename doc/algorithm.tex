@@ -48,7 +48,7 @@ similarly.
 The raw fold change of each sgRNA$^{iBAR}$ is calculated from the
 normalized counts of reference and experiment groups.
 
-$$fc_{i} = \frac{Cref_{i}}{Cexp_{i}}$$
+$$fc_{i} = \frac{Cexp_{i}}{Cref_{i}}$$
 $$lfc_{i} = \log_{2}fc_{i}$$
 
 where, $fc_{i}$ is the fold change (FC) of ith sgRNA$^{iBAR}$ and
@@ -74,50 +74,31 @@ calculate the LFC standard diviation for all the sgRNA$^{iBAR}$s.
 
 The raw z score of log fold change is calculated.
 
-$$raw ZLFC = \frac{LFC}/{LFC std}$$
+$$raw ZLFC = \frac{LFC}{LFC std}$$
 
-\section{Remove sgRNA$^{iBAR}$ ZLFC with large leverage}
+sgRNA$^{iBAR}$ ZLFC p values are calculated from normal distribution.
 
-The leverage of the Raw ZLFC of sgRNA$^{iBAR}$ to the sgRNA mean ZLFC is
-calcualted to distinguish the possible free-rider
-sgRNA$^{iBAR}$s. sgRNA$^{iBAR}$s ZLFC with leverage larger than the
-threshold are removed.
+\section{Calculate sgRNA mean z score of fold change}
 
-$$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
+The sgRNA level ZLFCs are calculated as the mean of all the ZLFCs of
+the relevant sgRNA$^{iBAR}$s.
 
-where `$Leverage_{i}$` is the `$i$th` sgRNA$^{iBAR}$ for one sgRNA, `$n$`
-is the number of sgRNA$^{iBAR}$s for the sgRNA, `$\={x}$` is the mean of
-the sgRNA$^{iBAR}$s' ZLFC.
+$$ZLFC_{sgRNA} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n}$$
 
+where, the sgRNA has $n$ sgRNA$^{iBAR}$s.
 
-% In order to modify the high leverage sgRNA$^{iBAR}$, we calculated the
-% modification ratio by the leverage. The leverage ratio for dropout
-% direction sgRNAs is calcualted as follow:
+Empirical P value is also calculated for the sgRNA ZLFCs. The p value
+is adjusted considering control of False Discovery Rate
+\citep{benjamini_controlling_1995}.
 
-% $$Dropout Leverage Ratio_{i} = n \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
-
-% The raw ZLFC of one sgRNA$^{iBAR}$ is multiplied by the ratio to generate
-% the modified ZLFC.
-
-% And for the enrichment sgRNAs, free-rider is a serious problem, so the
-% the leverage ratio is modified with a factor, $\sqrt{n}$, for higher punishment.
-
-% $$Enrichment Leverage Ratio_{i} = \sqrt{n} \times \frac{2 - Leverage_{i}}{2 * n - 2}$$
-
-
-\section{Calculate zscore of fold change p value in normal distribution}
-
-Calculate sgRNA$^{iBAR}$ ZLFC p value from normal distribution.
-
-
-\section{Calculate gene mean zscore of fold change}
+\section{Calculate gene mean z score of fold change}
 
 The gene level ZLFCs are calculated as the mean of all the ZLFCs of
-the relevant sgRNA$^{iBAR}$s. Considering the more sgRNAs for a gene
-implying higher confidence on the result, a factor $\sqrt{n}$ is
-multiplied to the mean ZLFCs.
+the relevant sgRNAs.
 
-$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n} \times \sqrt{n}$$
+$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA}}}{m}$$
+
+where, the gene has $m$ sgRNAs.
 
 Empirical P value is also calculated for the gene ZLFCs. The p value
 is adjusted considering control of False Discovery Rate
@@ -128,12 +109,11 @@ is adjusted considering control of False Discovery Rate
 
 
 Robust rank aggregation \citep{kolde_robust_2012} is utilized to
-calculate the rank significance of the gene with the sgRNA$^{iBAR}$s
-in the whole library. Aside from robust rank aggregation, mean rank
-aggregation is also calculated. The robust rank score is adjusted
-considering control of Fault Discovery Rate
+calculate the rank significance of the sgRNA and gene with the
+sgRNA$^{iBAR}$s in the whole library. Aside from robust rank
+aggregation, mean rank aggregation is also calculated. The robust rank
+score is adjusted considering control of False Discovery Rate
 \citep{benjamini_controlling_1995}.
-
 
 \bibliography{al}
 

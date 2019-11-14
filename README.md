@@ -230,36 +230,37 @@ The raw z score of log fold change is calculated.
 $$raw ZLFC = \frac{LFC}/{LFC std}$$
 ```
 
-### Step 5: Remove sgRNA-iBAR ZLFC with large leverage ###
+### Step 5: Calculate sgRNA mean z score of fold change ###
 
-The leverage of the Raw ZLFC of sgRNA-iBAR to the sgRNA mean ZLFC is
-calcualted to distinguish the possible free-rider
-sgRNA-iBARs. sgRNA-iBARs raw ZLFC with leverage larger than the
-threshold are removed.
+The sgRNA level ZLFCs are calculated as the mean of all the ZLFCs of
+the relevant sgRNA$^{iBAR}$s.
 
 ```{latex}
-$$Leverage_{i} = \frac{1}{n} + \frac{(x_{k} - \={x})^{2}}{\sum_{k}^{n}(x_{k} - \={x})^{2}}$$
+$$ZLFC_{sgRNA} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n}$$
 ```
 
-### Step 6: Calculate zscore of fold change p value in normal distribution ###
+where, the sgRNA has n sgRNA-iBAR.
 
-Calculate sgRNA-iBAR ZLFC p value from normal distribution.
+Empirical P value is also calculated for the sgRNA ZLFCs. The p value
+is adjusted considering control of False Discovery Rate.
 
-### Step 7: Calculate gene mean zscore of fold change ###
+
+### Step 6: Calculate gene mean zscore of fold change ###
 
 The gene level ZLFCs are calculated as the mean of all the ZLFCs of
-the relevant sgRNA-iBARs. Empirical P value is also calculated for the
-gene ZLFCs.
+the relevant sgRNAs.
 
 ```{latex}
-$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA-iBAR}}}{n} \times \sqrt{n}$$
+$$ZLFC_{gene} = \frac{\sum{ZLFC_{sgRNA}}}{m}$$
 ```
+
+where, the gene has m sgRNAs.
 
 Empirical P value is also calculated for the gene ZLFCs. The p value
 is adjusted considering control of False Discovery Rate.
 
 
-### Step 8: Robust rank aggregation analysis ###
+### Step 7: Robust rank aggregation analysis ###
 
 [Robust rank aggregation][2] is utilized to calculate the rank
 significance of the gene with the sgRNA-iBARs in the whole

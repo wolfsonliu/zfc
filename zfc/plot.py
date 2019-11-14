@@ -1,4 +1,11 @@
+####################
+# ZFC
+# Author: Wolfson Liu
+# Email: wolfsonliu@live.com
+####################
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def counts_boxplot(inputdata, sgresult):
@@ -15,7 +22,7 @@ def counts_boxplot(inputdata, sgresult):
     return fig
 
 
-def normcount_scatter(sgresult):
+def normcount_scatter(data):
     fig, axes = plt.subplots(
         2, 2,
         gridspec_kw={'width_ratios': [3, 1], 'height_ratios': [1, 3]},
@@ -24,8 +31,9 @@ def normcount_scatter(sgresult):
         figsize=(6.4, 6.4)
     )
     axes[1, 0].scatter(
-        sgresult['ctrl'], sgresult['exp'],
-        color='black', alpha=0.1, edgecolor=''
+        data['ctrl'], data['exp'],
+        c=['black'] * len(data['ctrl']), alpha=0.1,
+        edgecolor=['none'] * len(data['ctrl'])
     )
     xlim = axes[1, 0].get_xlim()
     ylim = axes[1, 0].get_ylim()
@@ -37,12 +45,14 @@ def normcount_scatter(sgresult):
     axes[1, 0].set_ylabel('Normalized counts of exp')
 
     axes[0, 0].hist(
-        sgresult['ctrl'], bins=100, color='black'
+        data['ctrl'], bins=100,
+        color='black'
     )
     axes[0, 0].set_ylabel('Counts')
 
     axes[1, 1].hist(
-        sgresult['exp'], bins=100, color='black', orientation='horizontal'
+        data['exp'], bins=100,
+        color='black', orientation='horizontal'
     )
     axes[1, 1].set_xlabel('Counts')
 
@@ -50,7 +60,7 @@ def normcount_scatter(sgresult):
     return fig
 
 
-def lfc_normcount_scatter(sgresult):
+def lfc_normcount_scatter(data):
     fig, axes = plt.subplots(
         2, 4,
         gridspec_kw={'width_ratios': [3, 1, 3, 1], 'height_ratios': [1, 3]},
@@ -59,31 +69,35 @@ def lfc_normcount_scatter(sgresult):
         figsize=(12.8, 6.4)
     )
     axes[1, 0].scatter(
-        sgresult['ctrl'], sgresult['lfc'],
-        color='black', alpha=0.1, edgecolor='')
+        data['ctrl'], data['lfc'],
+        c=['black'] * len(data['ctrl']), alpha=0.1,
+        edgecolor=['none'] * len(data['ctrl'])
+    )
     axes[1, 0].axhline(0, color='red', linestyle='dotted')
     axes[1, 0].set_xlabel('Normalized counts of ctrl')
     axes[1, 0].set_ylabel('$log_{2}$ fold change')
-    axes[0, 0].hist(sgresult['ctrl'], bins=100, color='black')
+    axes[0, 0].hist(data['ctrl'], bins=100, color='black')
     axes[0, 0].set_ylabel('Counts')
     axes[1, 1].hist(
-        sgresult['lfc'], bins=100, color='black', orientation='horizontal'
+        data['lfc'], bins=100,
+        color='black', orientation='horizontal'
     )
     axes[1, 1].axhline(0, color='red', linestyle='dotted')
     axes[1, 1].set_xlabel('Counts')
     axes[0, 1].set_visible(False)
 
     axes[1, 2].scatter(
-        sgresult['exp'], sgresult['lfc'],
-        color='black', alpha=0.1, edgecolor=''
+        data['exp'], data['lfc'],
+        c=['black'] * len(data['exp']), alpha=0.1,
+        edgecolor=['none'] * len(data['exp'])
     )
     axes[1, 2].axhline(0, color='red', linestyle='dotted')
     axes[1, 2].set_xlabel('Normalized counts of exp')
     axes[1, 2].set_ylabel('$log_{2}$ fold change')
-    axes[0, 2].hist(sgresult['exp'], bins=100, color='black')
+    axes[0, 2].hist(data['exp'], bins=100, color='black')
     axes[0, 2].set_ylabel('Counts')
     axes[1, 3].hist(
-        sgresult['lfc'], bins=100, color='black', orientation='horizontal'
+        data['lfc'], bins=100, color='black', orientation='horizontal'
     )
     axes[1, 3].axhline(0, color='red', linestyle='dotted')
     axes[1, 3].set_xlabel('Counts')
@@ -93,7 +107,7 @@ def lfc_normcount_scatter(sgresult):
     return fig
 
 
-def zlfc_normcount_scatter(sgresult):
+def zlfc_normcount_scatter(data):
     fig, axes = plt.subplots(
         2, 4,
         gridspec_kw={'width_ratios': [3, 1, 3, 1], 'height_ratios': [1, 3]},
@@ -102,31 +116,34 @@ def zlfc_normcount_scatter(sgresult):
         figsize=(12.8, 6.4)
     )
     axes[1, 0].scatter(
-        sgresult['ctrl'], sgresult['zlfc'],
-        color='black', alpha=0.1, edgecolor='')
+        data['ctrl'], data['zlfc'],
+        c=['black'] * len(data['ctrl']), alpha=0.1,
+        edgecolor=['none'] * len(data['ctrl'])
+    )
     axes[1, 0].axhline(0, color='red', linestyle='dotted')
     axes[1, 0].set_xlabel('Normalized counts of ctrl')
-    axes[1, 0].set_ylabel('Zscore of $log_{2}$ fold change')
-    axes[0, 0].hist(sgresult['ctrl'], bins=100, color='black')
+    axes[1, 0].set_ylabel('Z score of $log_{2}$ fold change')
+    axes[0, 0].hist(data['ctrl'], bins=100, color='black')
     axes[0, 0].set_ylabel('Counts')
     axes[1, 1].hist(
-        sgresult['zlfc'], bins=100, color='black', orientation='horizontal'
+        data['zlfc'], bins=100, color='black', orientation='horizontal'
     )
     axes[1, 1].axhline(0, color='red', linestyle='dotted')
     axes[1, 1].set_xlabel('Counts')
     axes[0, 1].set_visible(False)
 
     axes[1, 2].scatter(
-        sgresult['exp'], sgresult['zlfc'],
-        color='black', alpha=0.1, edgecolor=''
+        data['exp'], data['zlfc'],
+        c=['black'] * len(data['exp']), alpha=0.1,
+        edgecolor=['none'] * len(data['exp'])
     )
     axes[1, 2].axhline(0, color='red', linestyle='dotted')
     axes[1, 2].set_xlabel('Normalized counts of exp')
-    axes[1, 2].set_ylabel('Zscore of $log_{2}$ fold change')
-    axes[0, 2].hist(sgresult['exp'], bins=100, color='black')
+    axes[1, 2].set_ylabel('Z score of $log_{2}$ fold change')
+    axes[0, 2].hist(data['exp'], bins=100, color='black')
     axes[0, 2].set_ylabel('Counts')
     axes[1, 3].hist(
-        sgresult['zlfc'], bins=100, color='black', orientation='horizontal'
+        data['zlfc'], bins=100, color='black', orientation='horizontal'
     )
     axes[1, 3].axhline(0, color='red', linestyle='dotted')
     axes[1, 3].set_xlabel('Counts')
@@ -136,11 +153,12 @@ def zlfc_normcount_scatter(sgresult):
     return fig
 
 
-def lfc_std_scatter(sgresult):
+def lfcstd_lfc_scatter(data):
     fig, axes = plt.subplots(1, 1)
     axes.scatter(
-        sgresult['lfc_std'], sgresult['lfc'],
-        color='black', alpha=0.1, edgecolor=''
+        data['lfc_std'], data['lfc'],
+        c=['black'] * len(data['lfc_std']), alpha=0.1,
+        edgecolor=['none'] * len(data['lfc_std'])
     )
     axes.axhline(0, color='red', linestyle='dotted')
     axes.set_xlabel('Standard deviation of $log_{2}$ fold change')
@@ -148,36 +166,95 @@ def lfc_std_scatter(sgresult):
     return fig
 
 
-def gene_zlfc_hist(gresult):
+def zlfc_hist(data):
     fig, axes = plt.subplots(1, 1)
-    axes.hist(gresult['zlfc'], bins=100, color='black')
+    axes.hist(data['zlfc'], bins=100, color='black')
     axes.axvline(0, linestyle='dotted', color='red')
-    axes.set_xlabel('Zscore of $log_{2}$ fold change')
+    axes.set_xlabel('Z score of $log_{2}$ fold change')
     axes.set_ylabel('Counts')
     return fig
 
 
-def zfc_plot(outprefix, inputdata, sgresult, gresult):
-    fig = counts_boxplot(inputdata, sgresult)
+def zlfc_rra_scatter(data):
+    data.loc[:, 'RRA'] = data[['RRA_Score_down', 'RRA_Score_up']].min(axis=1)
+    fig, axes = plt.subplots(1, 1)
+    axes.scatter(
+        data['zlfc'], np.log10(data['RRA']) * -1,
+        c=['black'] * len(data['zlfc']), alpha=0.1,
+        edgecolor=['none'] * len(data['zlfc'])
+    )
+    axes.set_xlabel('Z score of $log_{2}$ fold change')
+    axes.set_ylabel('Robust Rank Aggregation (-log10)')
+    return fig
+
+
+def zlfc_rrafdr_scatter(data):
+    data.loc[:, 'RRA'] = data[
+        ['RRA_Score_down_adj', 'RRA_Score_up_adj']
+    ].min(axis=1)
+    fig, axes = plt.subplots(1, 1)
+    axes.scatter(
+        data['zlfc'], np.log10(data['RRA']) * -1,
+        c=['black'] * len(data['zlfc']), alpha=0.1,
+        edgecolor=['none'] * len(data['zlfc'])
+    )
+    axes.set_xlabel('Z score of $log_{2}$ fold change')
+    axes.set_ylabel('Robust Rank Aggregation (-log10 FDR)')
+    return fig
+
+
+def zfc_plot(outprefix, inputdata, barresult, sgresult, gresult):
+    # Boxplot: Counts and normalized counts
+    fig = counts_boxplot(inputdata, barresult)
     fig.savefig('_'.join([outprefix, 'counts_boxplot.png']))
     fig.savefig('_'.join([outprefix, 'counts_boxplot.pdf']))
 
-    fig = normcount_scatter(sgresult)
+    # Scatterplot: Normalized counts of control and experiment
+    fig = normcount_scatter(barresult)
     fig.savefig('_'.join([outprefix, 'normcount_scatter.png']))
     fig.savefig('_'.join([outprefix, 'normcount_scatter.pdf']))
 
-    fig = lfc_normcount_scatter(sgresult)
+    # Scatterplot: Barcode LFC with control and experiment normalized counts
+    fig = lfc_normcount_scatter(barresult)
     fig.savefig('_'.join([outprefix, 'lfc_normcount_scatter.png']))
     fig.savefig('_'.join([outprefix, 'lfc_normcount_scatter.pdf']))
 
-    fig = zlfc_normcount_scatter(sgresult)
+    # Scatterplot: Barcode ZLFC with control and experiment normalized counts
+    fig = zlfc_normcount_scatter(barresult)
     fig.savefig('_'.join([outprefix, 'zlfc_normcount_scatter.png']))
     fig.savefig('_'.join([outprefix, 'zlfc_normcount_scatter.pdf']))
 
-    fig = lfc_std_scatter(sgresult)
+    # Scatterplot: Barcode LFC std and LFC
+    fig = lfcstd_lfc_scatter(barresult)
     fig.savefig('_'.join([outprefix, 'lfc_std_scatter.png']))
     fig.savefig('_'.join([outprefix, 'lfc_std_scatter.pdf']))
 
-    fig = gene_zlfc_hist(gresult)
+    # Histogram: sgRNA ZLFC
+    fig = zlfc_hist(sgresult)
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_hist.png']))
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_hist.pdf']))
+
+    # Histogram: Gene ZLFC
+    fig = zlfc_hist(gresult)
     fig.savefig('_'.join([outprefix, 'gene_zlfc_hist.png']))
     fig.savefig('_'.join([outprefix, 'gene_zlfc_hist.pdf']))
+
+    # Scatterplot: sgRNA ZLFC RRA
+    fig = zlfc_rra_scatter(sgresult)
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_rra_scatter.png']))
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_rra_scatter.pdf']))
+
+    # Scatterplot: Gene ZLFC RRA
+    fig = zlfc_rra_scatter(gresult)
+    fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_scatter.png']))
+    fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_scatter.pdf']))
+
+    # Scatterplot: sgRNA ZLFC RRA FDR
+    fig = zlfc_rrafdr_scatter(sgresult)
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_rra_fdr_scatter.png']))
+    fig.savefig('_'.join([outprefix, 'sgrna_zlfc_rra_fdr_scatter.pdf']))
+
+    # Scatterplot: Gene ZLFC RRA
+    fig = zlfc_rrafdr_scatter(gresult)
+    fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_fdr_scatter.png']))
+    fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_fdr_scatter.pdf']))

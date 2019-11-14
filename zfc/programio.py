@@ -1,3 +1,9 @@
+####################
+# ZFC
+# Author: Wolfson Liu
+# Email: wolfsonliu@live.com
+####################
+
 import pandas as pd
 
 
@@ -21,24 +27,32 @@ def read_raw_count(filepath,
     return data
 
 
-def write_sgresult(data, filepath):
+def write_bar_result(data, filepath):
     data[[
-        'gene', 'guide', 'barcode', 'ctrl', 'exp', 'fc', 'lfc', 'lfc_std',
-        'barcode_zlfc_leverage', 'zlfc', 'p'
-    ]].sort_values(
-        ['gene', 'guide', 'barcode']
-    ).to_csv(filepath, index=False, sep='\t')
+        'ctrl', 'exp', 'fc', 'lfc', 'lfc_std', 'zlfc', 'p'
+    ]].sort_index(
+    ).to_csv(filepath, index=True, sep='\t')
 
 
-def write_gresult(data, filepath):
+def write_sg_result(data, filepath):
     data[[
-        'zlfc', 'zlfc_down', 'zlfc_up',
-        'count', 'count_up', 'count_down',
+        'zlfc', 'count',
         'p', 'p_adj',
         'RRA_Score_down', 'RRA_Score_down_adj',
         'RRA_Score_up', 'RRA_Score_up_adj',
-        'Mean_Rank_down',
-        'Mean_Rank_up',
+        'Mean_Rank_down', 'Mean_Rank_up',
+    ]].sort_values(
+        'zlfc', ascending=True
+    ).to_csv(filepath, index=True, sep='\t')
+
+
+def write_g_result(data, filepath):
+    data[[
+        'zlfc', 'count',
+        'p', 'p_adj',
+        'RRA_Score_down', 'RRA_Score_down_adj',
+        'RRA_Score_up', 'RRA_Score_up_adj',
+        'Mean_Rank_down', 'Mean_Rank_up',
     ]].sort_values(
         'zlfc', ascending=True
     ).to_csv(filepath, index=True, sep='\t')

@@ -3,6 +3,7 @@
 # Author: Wolfson Liu
 # Email: wolfsonliu@live.com
 ####################
+
 import pandas as pd
 import numpy as np
 import scipy.stats as stats
@@ -11,12 +12,11 @@ from .statsfunc import df_normalization
 from .statsfunc import df_smallcount
 from .statsfunc import ecdf
 from .statsfunc import p_adjust
-from .statsfunc import robust_rank_aggregation
-from .statsfunc import mean_rank_aggregation
+from .statsfunc import df_robust_rank_aggregation
+from .statsfunc import df_mean_rank_aggregation
 
 
 def zfoldchange(data,
-                leverage_threshold=None,
                 topn=None,
                 iteration=100):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
@@ -41,7 +41,7 @@ def zfoldchange(data,
         )
 
     norm = norm + smallcount.mean()
-    sgdf = pd.concat(
+    bar_df = pd.concat(
         [
             data[['gene', 'guide', 'barcode']],
             norm
@@ -52,22 +52,22 @@ def zfoldchange(data,
 
     # ------------------
     # Step 2: Calculate fold change
-    sgdf['fc'] = sgdf['exp'] / sgdf['ctrl']
-    sgdf['lfc'] = np.log2(sgdf['fc'])
+    bar_df['fc'] = bar_df['exp'] / bar_df['ctrl']
+    bar_df['lfc'] = np.log2(bar_df['fc'])
 
     # ------------------
     # Step 3: Calculate fold change std
 
     # get valid data range
-    lfc_q1 = sgdf['lfc'].quantile(0.05)
-    lfc_q2 = sgdf['lfc'].quantile(0.95)
-    ctrl_q1 = sgdf['ctrl'].quantile(0.025)
-    ctrl_q2 = sgdf['ctrl'].quantile(0.95)
+    lfc_q1 = bar_df['lfc'].quantile(0.05)
+    lfc_q2 = bar_df['lfc'].quantile(0.95)
+    ctrl_q1 = bar_df['ctrl'].quantile(0.025)
+    ctrl_q2 = bar_df['ctrl'].quantile(0.95)
 
     # select valid data for the model
-    model_data = sgdf.loc[
-        (sgdf['lfc'] >= lfc_q1) & (sgdf['lfc'] <= lfc_q2) &
-        (sgdf['ctrl'] >= ctrl_q1) & (sgdf['ctrl'] <= ctrl_q2)
+    model_data = bar_df.loc[
+        (bar_df['lfc'] >= lfc_q1) & (bar_df['lfc'] <= lfc_q2) &
+        (bar_df['ctrl'] >= ctrl_q1) & (bar_df['ctrl'] <= ctrl_q2)
     ]
 
     # cutting bins of the dat by ctrl data
@@ -85,149 +85,217 @@ def zfoldchange(data,
     reg.fit(np.expand_dims(bins_ctrlmean.values, 1), bins_lfcstd.values)
 
     # calculate the lfc_std by ctrl_mean using parameters from the linear model
-    sgdf = sgdf.assign(
-        lfc_std=sgdf['ctrl'] * reg.coef_[0] + reg.intercept_
+    bar_df = bar_df.assign(
+        lfc_std=bar_df['ctrl'] * reg.coef_[0] + reg.intercept_
     )
 
     # adjust the lfc_stds that are less than or equal to zero
-    sgdf.loc[sgdf['lfc_std'] <= 0, 'lfc_std'] = sgdf.loc[
-        sgdf['lfc_std'] > 0,
+    bar_df.loc[bar_df['lfc_std'] <= 0, 'lfc_std'] = bar_df.loc[
+        bar_df['lfc_std'] > 0,
         'lfc_std'
     ].median()
+    bar_df.loc[
+        bar_df['ctrl'] > bins_ctrlmean.max(),
+        'lfc_std'
+    ] = bar_df['lfc_std'].median()
 
     # ------------------
     # Step 4: Calculate raw zlfc using lfc and lfc_std
 
-    sgdf['zlfc'] = sgdf['lfc'] / sgdf['lfc_std']
+    bar_df.loc[:, 'zlfc'] = bar_df['lfc'] / bar_df['lfc_std']
 
-    # ------------------
-    # Step 5: Drop sgRNA-iBAR ZLFC with large leverage
+    bar_df['rank_down'] = bar_df['zlfc'].rank(
+        method='average', ascending=True
+    ) / len(bar_df['zlfc'])
 
-    sgdf['sgrna_zlfc_mean'] = np.asarray(
-        sgdf.groupby('guide')['zlfc'].mean()[sgdf['guide']]
-    )
-    sgdf['sgrna_zlfc_var'] = np.asarray(
-        sgdf.groupby('guide')['zlfc'].var()[sgdf['guide']]
-    )
-    sgdf['sgrna_zlfc_total_count'] = np.asarray(
-        sgdf.groupby('guide')['zlfc'].count()[sgdf['guide']]
-    )
-    # calculate barcode leverage
-    sgdf['barcode_zlfc_leverage'] = (
-        sgdf['zlfc'] - sgdf['sgrna_zlfc_mean']
-    ) ** 2 / (
-        sgdf['sgrna_zlfc_var'] * (sgdf['sgrna_zlfc_total_count'] - 1)
-    ) + (1 / sgdf['sgrna_zlfc_total_count'])
+    bar_df['rank_up'] = bar_df['zlfc'].rank(
+        method='average', ascending=False
+    ) / len(bar_df['zlfc'])
 
-    if leverage_threshold is not None:
-        sgdf = sgdf.loc[
-            sgdf['barcode_zlfc_leverage'] <= leverage_threshold,
-        ]
-
-    sgdf['sgrna_zlfc_remain_count'] = np.asarray(
-        sgdf.groupby('guide')['zlfc'].count()[sgdf['guide']]
-    )
-
-    # ------------------
-    # Step 6: Calculate zscore of fold change p value in normal distribution
+    bar_df.set_index(['gene', 'guide', 'barcode'], inplace=True)
 
     # Calculate P value using normal distribution
-    sgdf['p'] = stats.norm.cdf(sgdf['zlfc'])
-    sgdf['p'] = sgdf['p'].map(
+    bar_df['p'] = stats.norm.cdf(bar_df['zlfc'])
+    bar_df['p'] = bar_df['p'].map(
         lambda x: x if x <= 0.5 else 1 - x
     )
 
     # ------------------
-    # Step 7: Calculate gene mean zscore of fold change
+    # Step 5: Calculate sgRNA mean zscore of fold change
 
-    gdf = pd.DataFrame(
+    sg_df = pd.DataFrame(
         {
-            'zlfc': sgdf.groupby('gene')['zlfc'].mean() * np.sqrt(
-                sgdf.groupby('gene')['zlfc'].count()
-            ),
-            'count': sgdf.groupby('gene')['zlfc'].count(),
+            'zlfc': bar_df.groupby(level=[0, 1])['zlfc'].mean(),
+            'count': bar_df.groupby(level=[0, 1])['zlfc'].count()
+        }
+    )
+
+    # generate null distribution of sgRNA zlfc
+    sg_null_list = dict()
+    sg_ecdf_list = dict()
+
+    for i in range(iteration):
+        sample_bar = bar_df[['zlfc']].copy()
+        sample_bar.loc[:, 'zlfc'] = bar_df['zlfc'].sample(
+            frac=1
+        ).values
+        sg_zlfc = sample_bar.groupby(
+            level=[0, 1]
+        ).mean()
+
+        for c in sg_df['count'].unique():
+            if c not in sg_null_list:
+                sg_null_list[c] = list()
+            sg_null_list[c].extend(
+                sg_zlfc.loc[sg_df['count'] == c, 'zlfc'].values.tolist()
+            )
+        for c in sg_null_list:
+            sg_ecdf_list[c] = ecdf(sg_null_list[c])
+
+    # Calculate p value and FDR of sgRNA zlfc
+    sg_df['tp'] = sg_df.apply(
+        lambda a: sg_ecdf_list[a['count']](a['zlfc']),
+        axis=1
+    )
+    sg_df['p'] = sg_df['tp'].map(
+        lambda a: a if a <= 0.5 else 1 - a
+    )
+    sg_df['p_adj'] = p_adjust(sg_df['p'], 'BH')
+    del sg_df['tp']
+    del sg_null_list
+    del sg_ecdf_list
+
+    # -------------------
+    # Step 6: Calculate Gene mean zscore of fold change
+
+    g_df = pd.DataFrame(
+        {
+            'zlfc': sg_df.groupby(level=0)['zlfc'].mean(),
+            'count': sg_df.groupby(level=0)['zlfc'].count(),
         }
     )
 
     # generate null distribution of gene zlfc
-    null_data = dict()
-    ecdf_list = dict()
+    g_null_list = dict()
+    g_ecdf_list = dict()
 
     for i in range(iteration):
-        zlfc = sgdf['zlfc'].sample(
+        sample_sg = sg_df[['zlfc']].copy()
+        sample_sg.loc[:, 'zlfc'] = sg_df['zlfc'].sample(
             frac=1
-        ).reset_index(
-            drop=True
-        ).groupby(
-            sgdf['gene'].values
+        ).values
+        g_zlfc = sample_sg.groupby(
+            level=0
         ).mean()
 
-        for c in gdf['count'].unique():
-            if c not in null_data:
-                null_data[c] = list()
-            null_data[c].extend(
-                list(zlfc[gdf['count'] == c])
+        for c in g_df['count'].unique():
+            if c not in g_null_list:
+                g_null_list[c] = list()
+            g_null_list[c].extend(
+                g_zlfc.loc[g_df['count'] == c, 'zlfc'].values.tolist()
             )
-        for c in null_data:
-            ecdf_list[c] = ecdf(null_data[c])
+        for c in g_null_list:
+            g_ecdf_list[c] = ecdf(g_null_list[c])
 
     # Calculate p value and FDR of gene zlfc
-    gdf['tp'] = gdf.apply(
-        lambda a: ecdf_list[a['count']](a['zlfc']),
+    g_df['tp'] = g_df.apply(
+        lambda a: g_ecdf_list[a['count']](a['zlfc']),
         axis=1
     )
-    gdf['p'] = gdf['tp'].map(
+    g_df['p'] = g_df['tp'].map(
         lambda a: a if a <= 0.5 else 1 - a
     )
-    gdf['p_adj'] = p_adjust(gdf['p'], 'BH')
-    del gdf['tp']
-
-    gdf = gdf.assign(
-        zlfc_up=sgdf.loc[sgdf['zlfc'] > 0].groupby('gene')['zlfc'].mean(),
-        count_up=sgdf.loc[sgdf['zlfc'] > 0].groupby('gene')['zlfc'].count(),
-        zlfc_down=sgdf.loc[sgdf['zlfc'] < 0].groupby('gene')['zlfc'].mean(),
-        count_down=sgdf.loc[sgdf['zlfc'] < 0].groupby('gene')['zlfc'].count(),
-    )
+    g_df['p_adj'] = p_adjust(g_df['p'], 'BH')
+    del g_df['tp']
+    del g_null_list
+    del g_ecdf_list
 
     # ------------------
-    # Step 8: Rank aggregation
+    # Step 7: Rank aggregation
     if topn is None:
-        topn = int(sgdf.groupby('gene')['barcode'].count().median())
+        topn = min(
+            int(bar_df.groupby(level=[0, 1])['zlfc'].count().median()),
+            int(sg_df.groupby(level=0)['zlfc'].count().median())
+        )
 
-    sgdf['rank_down'] = sgdf['zlfc'].rank(
-        method='average', ascending=True
-    ) / len(sgdf['zlfc'])
-    sgdown = sgdf[['gene', 'rank_down']]
-    sgdown = sgdown.assign(
-        groupid=sgdown.groupby('gene')['rank_down'].rank(
-            method='first', ascending=True
-        ).astype(int)
-    ).set_index(['gene', 'groupid'])
-    sgdown = sgdown.unstack()
-    sgdown.columns = sgdown.columns.levels[1]
-    sgdown = sgdown[list(range(1, topn + 1))]
+    # sgRNA Rank
+    sg_b_down = bar_df[['rank_down']].copy()
+    sg_b_down.loc[:, 'groupid'] = sg_b_down.groupby(
+        level=[0, 1]
+    )['rank_down'].rank(
+        method='first', ascending=True
+    ).astype(int)
+    sg_b_down.reset_index(drop=False, inplace=True)
+    del sg_b_down['barcode']
+    sg_b_down.set_index(['gene', 'guide', 'groupid'], inplace=True)
+    sg_b_down = sg_b_down.unstack(level=2)
+    sg_b_down.columns = sg_b_down.columns.levels[1]
+    sg_b_down = sg_b_down[list(range(1, topn + 1))]
 
-    sgdf['rank_up'] = sgdf['zlfc'].rank(
-        method='average', ascending=False
-    ) / len(sgdf['zlfc'])
-    sgup = sgdf[['gene', 'rank_up']]
-    sgup = sgup.assign(
-        groupid=sgup.groupby('gene')['rank_up'].rank(
-            method='first', ascending=False
-        ).astype(int)
-    ).set_index(['gene', 'groupid'])
-    sgup = sgup.unstack()
-    sgup.columns = sgup.columns.levels[1]
-    sgup = sgup[list(range(1, topn + 1))]
+    sg_b_up = bar_df[['rank_up']].copy()
+    sg_b_up.loc[:, 'groupid'] = sg_b_up.groupby(
+        level=[0, 1]
+    )['rank_up'].rank(
+        method='first', ascending=True
+    ).astype(int)
+    sg_b_up.reset_index(drop=False, inplace=True)
+    del sg_b_up['barcode']
+    sg_b_up.set_index(['gene', 'guide', 'groupid'], inplace=True)
+    sg_b_up = sg_b_up.unstack(level=2)
+    sg_b_up.columns = sg_b_up.columns.levels[1]
+    sg_b_up = sg_b_up[list(range(1, topn + 1))]
 
-    gdf['RRA_Score_down'] = robust_rank_aggregation(sgdown)
-    gdf['RRA_Score_down_adj'] = p_adjust(gdf['RRA_Score_down'], 'BH')
-    gdf['RRA_Score_up'] = robust_rank_aggregation(sgup)
-    gdf['RRA_Score_up_adj'] = p_adjust(gdf['RRA_Score_up'], 'BH')
+    sg_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(sg_b_down)
+    sg_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
+        sg_df['RRA_Score_down'], 'BH'
+    )
+    sg_df.loc[:, 'RRA_Score_up'] = df_robust_rank_aggregation(sg_b_up)
+    sg_df.loc[:, 'RRA_Score_up_adj'] = p_adjust(
+        sg_df['RRA_Score_up'], 'BH'
+    )
 
-    gdf['Mean_Rank_down'] = mean_rank_aggregation(sgdown)
-    gdf['Mean_Rank_down_adj'] = p_adjust(gdf['Mean_Rank_down'], 'BH')
-    gdf['Mean_Rank_up'] = mean_rank_aggregation(sgup)
-    gdf['Mean_Rank_up_adj'] = p_adjust(gdf['Mean_Rank_up'], 'BH')
+    sg_df.loc[:, 'Mean_Rank_down'] = df_mean_rank_aggregation(sg_b_down)
+    sg_df.loc[:, 'Mean_Rank_up'] = df_mean_rank_aggregation(sg_b_up)
 
-    return (sgdf, gdf)
+    # gene Rank
+    g_b_down = bar_df[['rank_down']].copy()
+    g_b_down.loc[:, 'groupid'] = g_b_down.groupby(
+        level=0
+    )['rank_down'].rank(
+        method='first', ascending=True
+    ).astype(int)
+    g_b_down.reset_index(drop=False, inplace=True)
+    del g_b_down['barcode']
+    del g_b_down['guide']
+    g_b_down.set_index(['gene', 'groupid'], inplace=True)
+    g_b_down = g_b_down.unstack(level=1)
+    g_b_down.columns = g_b_down.columns.levels[1]
+    g_b_down = g_b_down[list(range(1, topn + 1))]
+
+    g_b_up = bar_df[['rank_up']].copy()
+    g_b_up.loc[:, 'groupid'] = g_b_up.groupby(
+        level=0
+    )['rank_up'].rank(
+        method='first', ascending=True
+    ).astype(int)
+    g_b_up.reset_index(drop=False, inplace=True)
+    del g_b_up['barcode']
+    del g_b_up['guide']
+    g_b_up.set_index(['gene', 'groupid'], inplace=True)
+    g_b_up = g_b_up.unstack(level=1)
+    g_b_up.columns = g_b_up.columns.levels[1]
+    g_b_up = g_b_up[list(range(1, topn + 1))]
+
+    g_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(g_b_down)
+    g_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
+        g_df['RRA_Score_down'], 'BH'
+    )
+    g_df.loc[:, 'RRA_Score_up'] = df_robust_rank_aggregation(g_b_up)
+    g_df.loc[:, 'RRA_Score_up_adj'] = p_adjust(
+        g_df['RRA_Score_up'], 'BH'
+    )
+
+    g_df.loc[:, 'Mean_Rank_down'] = df_mean_rank_aggregation(g_b_down)
+    g_df.loc[:, 'Mean_Rank_up'] = df_mean_rank_aggregation(g_b_up)
+
+    return (bar_df, sg_df, g_df)

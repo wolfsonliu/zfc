@@ -31,19 +31,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--leverage-threshold',
-    type=float,
-    action='store',
-    default=None,
-    help='Leverage threshold for justify of outliers. ' +
-    'The barcodes with leverage larger than threshold ' +
-    'will be consider as ourliers. ' +
-    'Default is None. ' +
-    'If each sgRNA has only one barcode or replicate, ' +
-    'this parameter should not be set.'
-)
-
-parser.add_argument(
     '--top-n',
     type=int,
     action='store',
@@ -87,26 +74,30 @@ inputdata = zfc.read_raw_count(
     exp_colname='exp'
 )
 
-sgresult, gresult = zfc.zfoldchange(
+barresult, sgresult, gresult = zfc.zfoldchange(
     inputdata,
-    leverage_threshold=args['leverage_threshold'],
     topn=args['top_n'],
     iteration=args['null_iteration']
 )
 
-zfc.write_sgresult(
+zfc.write_bar_result(
+    barresult,
+    '_'.join([args['outprefix'], 'barcode.txt'])
+)
+
+zfc.write_sg_result(
     sgresult,
     '_'.join([args['outprefix'], 'sgrna.txt'])
 )
 
-zfc.write_gresult(
+zfc.write_g_result(
     gresult,
     '_'.join([args['outprefix'], 'gene.txt'])
 )
 
 if args['plot']:
     zfc.zfc_plot(
-        args['outprefix'], inputdata, sgresult, gresult
+        args['outprefix'], inputdata, barresult, sgresult, gresult
     )
 
 # ------------------
