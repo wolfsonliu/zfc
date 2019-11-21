@@ -17,7 +17,8 @@ from .statsfunc import df_mean_rank_aggregation
 
 
 def zfoldchange(data,
-                topn=None,
+                top_n_barcode=None,
+                top_n_sgrna=None,
                 iteration=100):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
@@ -212,13 +213,12 @@ def zfoldchange(data,
 
     # ------------------
     # Step 7: Rank aggregation
-    if topn is None:
-        topn = min(
-            int(bar_df.groupby(level=[0, 1])['zlfc'].count().median()),
-            int(sg_df.groupby(level=0)['zlfc'].count().median())
-        )
 
     # sgRNA Rank
+    if top_n_barcode is None:
+        top_n_barcode = int(
+            bar_df.groupby(level=[0, 1])['zlfc'].count().median()
+        )
     sg_b_down = bar_df[['rank_down']].copy()
     sg_b_down.loc[:, 'groupid'] = sg_b_down.groupby(
         level=[0, 1]
@@ -230,7 +230,7 @@ def zfoldchange(data,
     sg_b_down.set_index(['gene', 'guide', 'groupid'], inplace=True)
     sg_b_down = sg_b_down.unstack(level=2)
     sg_b_down.columns = sg_b_down.columns.levels[1]
-    sg_b_down = sg_b_down[list(range(1, topn + 1))]
+    sg_b_down = sg_b_down[list(range(1, top_n_barcode + 1))]
 
     sg_b_up = bar_df[['rank_up']].copy()
     sg_b_up.loc[:, 'groupid'] = sg_b_up.groupby(
@@ -243,7 +243,7 @@ def zfoldchange(data,
     sg_b_up.set_index(['gene', 'guide', 'groupid'], inplace=True)
     sg_b_up = sg_b_up.unstack(level=2)
     sg_b_up.columns = sg_b_up.columns.levels[1]
-    sg_b_up = sg_b_up[list(range(1, topn + 1))]
+    sg_b_up = sg_b_up[list(range(1, top_n_barcode + 1))]
 
     sg_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(sg_b_down)
     sg_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
@@ -258,6 +258,10 @@ def zfoldchange(data,
     sg_df.loc[:, 'Mean_Rank_up'] = df_mean_rank_aggregation(sg_b_up)
 
     # gene Rank
+    if top_n_sgrna is None:
+        top_n_sgrna = int(
+            bar_df.groupby(level=0)['zlfc'].count().median()
+        )
     g_b_down = bar_df[['rank_down']].copy()
     g_b_down.loc[:, 'groupid'] = g_b_down.groupby(
         level=0
@@ -270,7 +274,7 @@ def zfoldchange(data,
     g_b_down.set_index(['gene', 'groupid'], inplace=True)
     g_b_down = g_b_down.unstack(level=1)
     g_b_down.columns = g_b_down.columns.levels[1]
-    g_b_down = g_b_down[list(range(1, topn + 1))]
+    g_b_down = g_b_down[list(range(1, top_n_sgrna + 1))]
 
     g_b_up = bar_df[['rank_up']].copy()
     g_b_up.loc[:, 'groupid'] = g_b_up.groupby(
@@ -284,7 +288,7 @@ def zfoldchange(data,
     g_b_up.set_index(['gene', 'groupid'], inplace=True)
     g_b_up = g_b_up.unstack(level=1)
     g_b_up.columns = g_b_up.columns.levels[1]
-    g_b_up = g_b_up[list(range(1, topn + 1))]
+    g_b_up = g_b_up[list(range(1, top_n_sgrna + 1))]
 
     g_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(g_b_down)
     g_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
