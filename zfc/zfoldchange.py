@@ -17,9 +17,10 @@ from .statsfunc import df_mean_rank_aggregation
 
 
 def zfoldchange(data,
-                top_n_barcode=None,
                 top_n_sgrna=None,
-                iteration=100):
+                top_n_gene=None,
+                iteration=100,
+                normalization='total'):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
     for x in ['gene', 'guide', 'barcode', 'ctrl', 'exp']:
@@ -29,7 +30,7 @@ def zfoldchange(data,
     # Step 1: Normalization of raw counts
     norm = df_normalization(
         data[['ctrl', 'exp']],
-        'total'
+        normalization
     )
     for a in [0.05, 0.1, 0.15]:
         smallcount = df_smallcount(norm, a)
@@ -74,16 +75,21 @@ def zfoldchange(data,
     # cutting bins of the dat by ctrl data
     bins = pd.cut(model_data['ctrl'], 200).astype(str)
 
-    bins_lfcstd = model_data.groupby(bins)['lfc'].std()
-    bins_ctrlmean = model_data.groupby(bins)['ctrl'].mean()
+    train_data = pd.DataFrame(
+        {
+            'lfcstd': model_data.groupby(bins)['lfc'].std(),
+            'ctrlmean': model_data.groupby(bins)['ctrl'].mean()
+        }
+    )
 
-    null_idx = bins_lfcstd.isnull().copy()
-    bins_ctrlmean = bins_ctrlmean[~null_idx]
-    bins_lfcstd = bins_lfcstd[~null_idx]
+    train_data = train_data.loc[~train_data['lfcstd'].isnull()]
 
     # linear model of the lfc_std:ctrl_mean model
     reg = linear_model.LinearRegression()
-    reg.fit(np.expand_dims(bins_ctrlmean.values, 1), bins_lfcstd.values)
+    reg.fit(
+        np.expand_dims(train_data['ctrlmean'].values, 1),
+        train_data['lfcstd'].values
+    )
 
     # calculate the lfc_std by ctrl_mean using parameters from the linear model
     bar_df = bar_df.assign(
@@ -96,7 +102,7 @@ def zfoldchange(data,
         'lfc_std'
     ].median()
     bar_df.loc[
-        bar_df['ctrl'] > bins_ctrlmean.max(),
+        bar_df['ctrl'] > train_data['ctrlmean'].max(),
         'lfc_std'
     ] = bar_df['lfc_std'].median()
 
@@ -215,8 +221,8 @@ def zfoldchange(data,
     # Step 7: Rank aggregation
 
     # sgRNA Rank
-    if top_n_barcode is None:
-        top_n_barcode = int(
+    if top_n_sgrna is None:
+        top_n_sgrna = int(
             bar_df.groupby(level=[0, 1])['zlfc'].count().median()
         )
     sg_b_down = bar_df[['rank_down']].copy()
@@ -230,7 +236,7 @@ def zfoldchange(data,
     sg_b_down.set_index(['gene', 'guide', 'groupid'], inplace=True)
     sg_b_down = sg_b_down.unstack(level=2)
     sg_b_down.columns = sg_b_down.columns.levels[1]
-    sg_b_down = sg_b_down[list(range(1, top_n_barcode + 1))]
+    sg_b_down = sg_b_down[list(range(1, top_n_sgrna + 1))]
 
     sg_b_up = bar_df[['rank_up']].copy()
     sg_b_up.loc[:, 'groupid'] = sg_b_up.groupby(
@@ -243,7 +249,7 @@ def zfoldchange(data,
     sg_b_up.set_index(['gene', 'guide', 'groupid'], inplace=True)
     sg_b_up = sg_b_up.unstack(level=2)
     sg_b_up.columns = sg_b_up.columns.levels[1]
-    sg_b_up = sg_b_up[list(range(1, top_n_barcode + 1))]
+    sg_b_up = sg_b_up[list(range(1, top_n_sgrna + 1))]
 
     sg_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(sg_b_down)
     sg_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
@@ -258,8 +264,8 @@ def zfoldchange(data,
     sg_df.loc[:, 'Mean_Rank_up'] = df_mean_rank_aggregation(sg_b_up)
 
     # gene Rank
-    if top_n_sgrna is None:
-        top_n_sgrna = int(
+    if top_n_gene is None:
+        top_n_gene = int(
             bar_df.groupby(level=0)['zlfc'].count().median()
         )
     g_b_down = bar_df[['rank_down']].copy()
@@ -274,7 +280,7 @@ def zfoldchange(data,
     g_b_down.set_index(['gene', 'groupid'], inplace=True)
     g_b_down = g_b_down.unstack(level=1)
     g_b_down.columns = g_b_down.columns.levels[1]
-    g_b_down = g_b_down[list(range(1, top_n_sgrna + 1))]
+    g_b_down = g_b_down[list(range(1, top_n_gene + 1))]
 
     g_b_up = bar_df[['rank_up']].copy()
     g_b_up.loc[:, 'groupid'] = g_b_up.groupby(
@@ -288,7 +294,7 @@ def zfoldchange(data,
     g_b_up.set_index(['gene', 'groupid'], inplace=True)
     g_b_up = g_b_up.unstack(level=1)
     g_b_up.columns = g_b_up.columns.levels[1]
-    g_b_up = g_b_up[list(range(1, top_n_sgrna + 1))]
+    g_b_up = g_b_up[list(range(1, top_n_gene + 1))]
 
     g_df.loc[:, 'RRA_Score_down'] = df_robust_rank_aggregation(g_b_down)
     g_df.loc[:, 'RRA_Score_down_adj'] = p_adjust(
@@ -302,4 +308,4 @@ def zfoldchange(data,
     g_df.loc[:, 'Mean_Rank_down'] = df_mean_rank_aggregation(g_b_down)
     g_df.loc[:, 'Mean_Rank_up'] = df_mean_rank_aggregation(g_b_up)
 
-    return (bar_df, sg_df, g_df)
+    return (bar_df, sg_df, g_df, train_data, reg)

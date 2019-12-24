@@ -7,7 +7,7 @@ or without replicates.
 
 ## Dependency ##
 
-ZFC is designed using python3 and require packages that is available
+ZFC is designed with python3 and requires packages that are available
 in Linux, Mac OS, and Windows.
 
 * Python3.x
@@ -19,7 +19,7 @@ in Linux, Mac OS, and Windows.
 
 ## Installation ##
 
-Clone this repository, and install the software.
+Clone this repository, then install the software.
 
 ```{shell}
 $ git clone https://github.com/wolfsonliu/zfc.git
@@ -54,12 +54,12 @@ optional arguments:
                         Output file prefix, can be the file directory path
                         with file name prefix. The directory in the outprefix
                         should be built before analysis.
-  --leverage-threshold LEVERAGE_THRESHOLD
-                        Leverage threshold for justify of outliers. The
-                        barcodes with leverage larger than threshold will be
-                        consider as ourliers. Default is None. If each sgRNA
-                        has only one barcode or replicate, this parameter
-                        should not be set.
+  --top-n-sgrna TOP_N_SGRNA
+                        Only consider top n barcodes for each sgRNA. Default
+                        to use all the data.
+  --top-n-gene TOP_N_GENE
+                        Only consider top n barcodes for each gene. Default to
+                        use all the data.
   --null-iteration NULL_ITERATION
                         The iteration to generate null distribution in
                         calculating the p value of genes. The larger the

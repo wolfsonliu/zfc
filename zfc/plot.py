@@ -6,6 +6,34 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from .statsfunc import gini
+
+
+def lorenz_curve(data):
+    countdata = dict()
+    countdata['ctrl'] = data['ctrl'].sort_values(ascending=True).copy()
+    countdata['exp'] = data['exp'].sort_values(ascending=True).copy()
+    lorenz = dict()
+    lorenz['ctrl'] = countdata['ctrl'].cumsum() / countdata['ctrl'].sum()
+    lorenz['exp'] = countdata['exp'].cumsum() / countdata['exp'].sum()
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.8, 6.4))
+
+    for i, lab in enumerate(['ctrl', 'exp']):
+        axes[i].plot(
+            np.arange(lorenz[lab].size + 1) / lorenz[lab].size,
+            np.insert(lorenz[lab].values, 0, 0),
+            color='k'
+        )
+        axes[i].plot([0, 1], [0, 1], color='red', linestyle='dotted')
+        axes[i].set_title(
+            'Gini index: {0}'.format(round(gini(countdata[lab].values), 4))
+        )
+        axes[i].set_xlabel(['Control', 'Experiment'][i])
+        axes[i].set_ylabel('Total count ratio')
+        axes[i].set_aspect('equal')
+
+    return fig
 
 
 def counts_boxplot(inputdata, sgresult):
@@ -166,6 +194,24 @@ def lfcstd_lfc_scatter(data):
     return fig
 
 
+def lfcstd_ctrlmean_figure(train_data, lm):
+    fig, axes = plt.subplots(1, 1)
+    axes.scatter(
+        train_data['ctrlmean'], train_data['lfcstd'], color='k'
+    )
+    x = np.arange(train_data['ctrlmean'].min(), train_data['ctrlmean'].max())
+    y = x * lm.coef_[0] + lm.intercept_
+    axes.plot(x, y, color='red', linestyle='dotted')
+    axes.set_title(
+        'Slope: {0}; Intercept: {1}.'.format(
+            round(lm.coef_[0], 4), round(lm.intercept_, 4)
+        )
+    )
+    axes.set_xlabel('Control normalized count (bin mean)')
+    axes.set_ylabel('Standard deviation of $log_{2}$ fold change (bin std)')
+    return fig
+
+
 def zlfc_hist(data):
     fig, axes = plt.subplots(1, 1)
     axes.hist(data['zlfc'], bins=100, color='black')
@@ -203,7 +249,14 @@ def zlfc_rrafdr_scatter(data):
     return fig
 
 
-def zfc_plot(outprefix, inputdata, barresult, sgresult, gresult):
+def zfc_plot(outprefix, inputdata,
+             barresult, sgresult, gresult,
+             train_data, lm):
+    # Lorenz Curve
+    fig = lorenz_curve(inputdata)
+    fig.savefig('_'.join([outprefix, 'lorenz.png']))
+    fig.savefig('_'.join([outprefix, 'lorenz.pdf']))
+
     # Boxplot: Counts and normalized counts
     fig = counts_boxplot(inputdata, barresult)
     fig.savefig('_'.join([outprefix, 'counts_boxplot.png']))
@@ -258,3 +311,8 @@ def zfc_plot(outprefix, inputdata, barresult, sgresult, gresult):
     fig = zlfc_rrafdr_scatter(gresult)
     fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_fdr_scatter.png']))
     fig.savefig('_'.join([outprefix, 'gene_zlfc_rra_fdr_scatter.pdf']))
+
+    # Model figure of lfcstd and ctrlmean
+    fig = lfcstd_ctrlmean_figure(train_data, lm)
+    fig.savefig('_'.join([outprefix, 'lfcstd_ctrlmean.png']))
+    fig.savefig('_'.join([outprefix, 'lfcstd_ctrlmean.pdf']))

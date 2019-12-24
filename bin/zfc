@@ -31,7 +31,21 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--top-n-barcode',
+    '--normalization',
+    action='store',
+    default='total',
+    choices=['total', 'median', 'quantile', 'median_ratio', 'none'],
+    help='Normalization of raw count data, default is total. ' +
+    'Support method: ' +
+    'total (Total sum normalization); ' +
+    'median (Median normalization); ' +
+    'quantile (Upper quantile normalization (0.75)); ' +
+    'median_ratio (Median ratio normalization); ' +
+    'none (No normalization).'
+)
+
+parser.add_argument(
+    '--top-n-sgrna',
     type=int,
     action='store',
     default=None,
@@ -40,11 +54,11 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--top-n-sgrna',
+    '--top-n-gene',
     type=int,
     action='store',
     default=None,
-    help='Only consider top n sgRNAs for each gene. ' +
+    help='Only consider top n barcodes for each gene. ' +
     'Default to use all the data.'
 )
 
@@ -83,11 +97,12 @@ inputdata = zfc.read_raw_count(
     exp_colname='exp'
 )
 
-barresult, sgresult, gresult = zfc.zfoldchange(
+barresult, sgresult, gresult, train_data, lm = zfc.zfoldchange(
     inputdata,
-    top_n_barcode=args['top_n_barcode'],
     top_n_sgrna=args['top_n_sgrna'],
-    iteration=args['null_iteration']
+    top_n_gene=args['top_n_gene'],
+    iteration=args['null_iteration'],
+    normalization=args['normalization']
 )
 
 zfc.write_bar_result(
@@ -107,7 +122,9 @@ zfc.write_g_result(
 
 if args['plot']:
     zfc.zfc_plot(
-        args['outprefix'], inputdata, barresult, sgresult, gresult
+        args['outprefix'], inputdata,
+        barresult, sgresult, gresult,
+        train_data, lm
     )
 
 # ------------------

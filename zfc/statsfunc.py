@@ -72,6 +72,8 @@ def df_median_ratio_normfactor(df):
     '''
     Normalize input data indicated by the label.
     Now only median ratio normalization is available.
+
+    Reference: Maza, E., Frasse, P., Senin, P., Bouzayen, M., and Zouine, M. (2013). Comparison of normalization methods for differential gene expression analysis in RNA-Seq experiments: A matter of relative size of studied transcriptomes. Commun Integr Biol 6, e25849–e25849.
     '''
     dfgm = np.exp(np.log(df + 1.0).sum(axis=1) / df.shape[1]) - 1.0
     dfgm[dfgm <= 0] = 1
@@ -82,16 +84,44 @@ def df_median_ratio_normfactor(df):
 
 def df_total_count_normfactor(df):
     colsum = df.sum(axis=0)
-    colsummean = colsum.sum() / df.shape[1]
-    normfactor = colsummean / colsum
+    normfactor = colsum.mean() / colsum
     return normfactor
 
 
+def df_median_normfactor(df):
+    colmedian = df.median(axis=0)
+    normfactor = colmedian.mean() / colmedian
+    return normfactor
+
+
+def df_quantile_normfactor(df, quantile=0.75):
+    '''
+    From edgeR .calcFactorQuantile
+    '''
+    normfactor = df_total_count_normfactor(df)
+    y = df.mul(normfactor, axis=1) / df.sum(axis=0).mean()
+    return y.quantile(quantile, axis=0)
+
+
 def df_normalization(df, method):
+    '''
+    Normalization of raw count data.
+
+    Normalization method:
+        * "total": Total sum normalization
+        * "median": Median normalization
+        * "quantile": Upper quantile normalization (0.75)
+        * "median_ratio": Median ratio normalization
+        * "none: No normalization
+    '''
+    assert method in [
+        'total', 'median', 'quantile', 'median_ratio', 'none'
+    ], "Normalization method not support {0}".format(method)
+
     normfactor = df_total_count_normfactor(df)
     if method == 'none':
         normfactor = np.array([1]*len(normfactor))
-    elif method == 'median':
+    elif method == 'median_ratio':
         medianfactor = df_median_ratio_normfactor(df)
         if (medianfactor == 0).any():
             exit('Median factor is zero, using total count normalization')
@@ -99,6 +129,10 @@ def df_normalization(df, method):
             exit('Too many zeros in counts, using total count normalization')
         else:
             normfactor = medianfactor
+    elif method == 'quantile':
+        normfactor = df_quantile_normfactor(df)
+    elif method == 'median':
+        normfactor = df_median_normfactor(df)
     elif method == 'total':
         pass
     result = df.mul(normfactor, axis=1)
@@ -184,3 +218,15 @@ def df_robust_rank_aggregation(rank_matrix):
         return (beta_score(r) * k).clip(0, 1).min()
 
     return rank_matrix.apply(lambda x: rho_score(x), axis=1)
+
+
+def gini(arr):
+    '''
+    Using R library ineq, Gini function
+    '''
+    sorted_arr = arr.copy()
+    sorted_arr.sort()
+    n = arr.size
+    G = sum(sorted_arr * (np.arange(n) + 1))
+    G = 2 * G / sorted_arr.sum() - (n + 1.)
+    return G/n
