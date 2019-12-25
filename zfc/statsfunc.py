@@ -110,12 +110,12 @@ def df_normalization(df, method):
     Normalization method:
         * "total": Total sum normalization
         * "median": Median normalization
-        * "quantile": Upper quantile normalization (0.75)
+        * "upper_quartile": Upper quartile normalization (0.75)
         * "median_ratio": Median ratio normalization
         * "none: No normalization
     '''
     assert method in [
-        'total', 'median', 'quantile', 'median_ratio', 'none'
+        'total', 'median', 'upper_quartile', 'median_ratio', 'none'
     ], "Normalization method not support {0}".format(method)
 
     normfactor = df_total_count_normfactor(df)

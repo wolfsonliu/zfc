@@ -54,6 +54,12 @@ optional arguments:
                         Output file prefix, can be the file directory path
                         with file name prefix. The directory in the outprefix
                         should be built before analysis.
+  --normalization  {total,median,quantile,median_ratio,none}
+                        Normalization of raw count data, default is total.
+                        Support method: total (Total sum normalization);
+                        median (Median normalization); quantile (Upper
+                        quantile normalization (0.75)); median_ratio (Median
+                        ratio normalization); none (No normalization). 
   --top-n-sgrna TOP_N_SGRNA
                         Only consider top n barcodes for each sgRNA. Default
                         to use all the data.
