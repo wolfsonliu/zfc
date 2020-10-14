@@ -20,14 +20,22 @@ replicates and sgRNA$^{iBAR}$ is treated with similar procedure.
 
 \section{Normalization of raw counts}
 
-We use total counts for the normalization of raw counts, to rectify
-the batch sequencing deptch. Because some sgRNAs in the reference have
-very low raw counts, which can affect the fold change calculation of
-the following analysis. We define sgRNAs counts less than 0.05
-quantile both in reference group and experiment group as the small
-count sgRNAs. The mean counts of all the small count sgNRAs were added
-to the normalized counts. The normalized counts for sgRNAs in
-reference group are calculated as following expression:
+In the ZFC algorithm, total-count normalization and median-ratio
+normalization can be applied to the raw count data to normalize the
+batch effects. Total count is applied to rectify the batch sequencing
+depth for the normalization purpose of raw counts with an assumption
+that the distributions of control and experiment groups remain scant
+similar. And for a bidirectional screening, the enrichment genes might
+greatly affect the distribution of experiment group. Median-ratio
+normalization should be adopt instead of total-count normalization.
+
+Because some sgRNAs in the reference have very low raw counts, which
+can affect the fold change calculation of the following analysis. We
+define sgRNAs counts less than 0.05 quantile both in reference group
+and experiment group as the small count sgRNAs. The mean counts of all
+the small count sgRNAs were added to the normalized counts. The
+normalized counts for sgRNAs in reference group are calculated as
+following expression:
 
 $$Cn_{i} = \frac{Cr_{i}}{S_{ref}} \times 0.5 \times (S_{ref} + S_{exp})$$
 
@@ -65,10 +73,10 @@ LFC are different for sgRNA$^{iBAR}$s with different normalized counts
 of reference group. All the sgRNA$^{iBAR}$s are divided into several
 sets according to the normalized counts of reference group. And the
 standard deviations of log fold change are calculated among the
-divided sets. The LFC standard diviation and the normalized counts of
+divided sets. The LFC standard deviation and the normalized counts of
 the reference is linearly related. So, a linear model is calculated
 for the LFC sd and reference counts. And the linear model is used to
-calculate the LFC standard diviation for all the sgRNA$^{iBAR}$s.
+calculate the LFC standard deviation for all the sgRNA$^{iBAR}$s.
 
 \section{Raw z score of log fold change}
 

@@ -19,18 +19,20 @@ def readme():
     ) as f:
         return f.read()
 
+long_description=readme()
 
 setup(
     name=package,
     version=version,
     description="The zfc software is used for analysis of counts data.",
-    long_description=readme(),
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 1 - Planning',
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)'
     ],
-    url='',
+    url='https://github.com/wolfsonliu/zfc',
     author='Zhiheng Liu',
     author_email='zhiheng.liu@pku.edu.cn',
     license='GPL',

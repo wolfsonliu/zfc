@@ -27,6 +27,12 @@ $ cd zfc
 $ python3 setup.py install
 ```
 
+Or from pypi:
+
+```{shell}
+$ pip install --user zfc
+```
+
 It's advised to use
 [virtualenv](https://virtualenv.pypa.io/en/stable/) or other software
 to create virual environment for the ZFC software.
