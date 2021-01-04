@@ -1,3 +1,5 @@
+![ZFC](doc/zfc_card.png)
+
 # ZFC #
 
 ZFC is a software to calculate fold change zscore of screening data.
