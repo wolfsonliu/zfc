@@ -38,8 +38,8 @@ setup(
     license='GPL',
     packages=['zfc'],
     install_requires=[
-        'numpy>=1.10', 'scipy>=1.0', 'pandas>=0.16',
-        'matplotlib>=2.0.0', 'sklearn'
+        'numpy', 'scipy', 'pandas',
+        'matplotlib', 'sklearn'
     ],
     scripts=[
         'bin/zfc',

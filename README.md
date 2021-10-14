@@ -2,10 +2,13 @@
 
 # ZFC #
 
-ZFC is a software to calculate fold change zscore of screening data.
+ZFC is a software to calculate fold change z score of screening data.
 
 ZFC can used for CRISPR library screening with or without [ibar][1], with
-or without replicates.
+or without replicates. Please cite us [(Xu et al., 2021)][2]:
+
+* Xu, P., Liu, Z., Liu, Y., Ma, H., Xu, Y., Bao, Y., Zhu, S., Cao, Z., Wu, Z., Zhou, Z., et al. (**2021**). Genome-wide interrogation of gene functions through base editor screens empowered by barcoded sgRNAs. *Nat Biotechnol*.
+
 
 ## Dependency ##
 
@@ -276,14 +279,14 @@ is adjusted considering control of False Discovery Rate.
 
 ### Step 7: Robust rank aggregation analysis ###
 
-[Robust rank aggregation][2] is utilized to calculate the rank
+[Robust rank aggregation][3] is utilized to calculate the rank
 significance of the gene with the sgRNA-iBARs in the whole
 library. Aside from robust rank aggregation, mean rank aggregation is
 also calculated. The robust rank score is adjusted
 considering control of Fault Discovery Rate.
 
-### Reference ###
+***
 
-[1]: Zhu, S. et al. [Guide RNAs with embedded barcodes boost CRISPR-pooled screens](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1628-0). *Genome Biology* **20**, (2019).
-
-[2]: Kolde, R., Laur, S., Adler, P. & Vilo, J. [Robust rank aggregation for gene list integration and meta-analysis](http://bioinformatics.oxfordjournals.org/content/28/4/573.abstract). *Bioinformatics* **28**, 573–580 (2012).
+[1]: <https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1628-0> "Zhu, S. et al. Guide RNAs with embedded barcodes boost CRISPR-pooled screens. Genome Biology 20, (2019)."
+[2]: <http://www.nature.com/articles/s41587-021-00944-1> "Xu, P., Liu, Z., Liu, Y., Ma, H., Xu, Y., Bao, Y., Zhu, S., Cao, Z., Wu, Z., Zhou, Z., et al. (2021). Genome-wide interrogation of gene functions through base editor screens empowered by barcoded sgRNAs. Nat Biotechnol."
+[3]: <http://bioinformatics.oxfordjournals.org/content/28/4/573.abstract> "Kolde, R., Laur, S., Adler, P. & Vilo, J. Robust rank aggregation for gene list integration and meta-analysis. Bioinformatics 28, 573–580 (2012)."
