@@ -5,4 +5,4 @@ from .programio import write_g_result
 from .zfoldchange import zfoldchange
 from .plot import zfc_plot
 
-__version__='0.1.6'
+__version__='0.1.7'
