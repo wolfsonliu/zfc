@@ -34,8 +34,9 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 
 ## `bin/` entry points
 
-- `bin/zfc` — two-line shim that calls `zfc.cli.main()`, kept for direct
-  invocation. The installed command is the `[project.scripts]` entry point `zfc`.
+The Python CLI is the `[project.scripts]` entry point `zfc` (implemented in
+  `src/zfc/cli.py::main`), run via `uv run zfc` or the installed `zfc` command;
+  the two bash scripts below are repo-only tools.
 - `bin/library_count_sgrna` — bash; counts sgRNAs from paired-end FASTQ against
   a library, emitting `gene guide barcode count`.
 - `bin/library_count_sgrna_with_barcode` — bash; same, but also extracts the

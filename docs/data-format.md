@@ -15,7 +15,7 @@ gene	guide	barcode	ctrl	exp
 - `ctrl`, `exp` — raw counts (numeric; may be fractional for merged replicates).
 - `barcode` may equal `guide` when there is no iBAR (one barcode per guide).
 
-Source: `src/zfc/programio.py::read_raw_count` and `bin/zfc` help. Columns are
+Source: `src/zfc/programio.py::read_raw_count` and `src/zfc/cli.py` help. Columns are
 hard-coded and renamed to these canonical names on read.
 
 ## Input scenarios
@@ -72,7 +72,7 @@ treat `upper_quartile` as effectively `total` until that is fixed.
 
 - Header/column names above are a public contract; changing them breaks
   `read_raw_count` and all downstream output/plots.
-  - Why: names are hard-coded in `programio.py` and `bin/zfc`.
+  - Why: names are hard-coded in `programio.py` and `cli.py`.
   - When: any I/O or schema change.
   - Expires: if a configurable/aliased schema is introduced.
 

@@ -35,7 +35,7 @@ Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
 
 ### Known bug: `upper_quartile` branch never runs
 
-- The CLI (`bin/zfc`) and the `df_normalization` assert accept `upper_quartile`,
+- The CLI (`src/zfc/cli.py`) and the `df_normalization` assert accept `upper_quartile`,
   but the code branch that applies the quantile factor checks `quantile`
   (`elif method == 'quantile':`). Net effect: `--normalization upper_quartile`
   silently falls through to `total` normalization. `README.md` also still shows

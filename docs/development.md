@@ -41,7 +41,7 @@ alongside new or changed behavior; the contracts to lock are in
 
 ## Run the CLI
 
-- `uv run zfc --help` (installed entry point; `./bin/zfc` also works).
+- `uv run zfc --help` (installed entry point).
 - `library_count_sgrna` and `library_count_sgrna_with_barcode` are bash scripts
   run from the repo as `./bin/...`; see `docs/data-format.md` for their I/O.
 
@@ -58,7 +58,7 @@ alongside new or changed behavior; the contracts to lock are in
 ## Versioning
 
 Bump `src/zfc/__init__.py::__version__` (current: `0.1.7`); hatchling reads it for
-packaging and `bin/zfc --version` reads it at runtime.
+packaging and `zfc --version` reads it at runtime.
   - Why: version is single-sourced from one place.
   - When: every release.
   - Expires: if the version moves elsewhere, update `pyproject.toml` accordingly.

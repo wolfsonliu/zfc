@@ -38,12 +38,12 @@ Read a doc only when its condition matches.
 1. **The input count table is tab-separated with exactly the header
    `gene guide barcode ctrl exp`.**
    When: any I/O, CLI, or validation change · Why: `read_raw_count`
-   (`src/zfc/programio.py`) and `bin/zfc` hard-code these names · Expires: if a
+   (`src/zfc/programio.py`) and `src/zfc/cli.py` hard-code these names · Expires: if a
    configurable/aliased schema is introduced deliberately.
 
 2. **Do not change result-table columns or output filenames without updating
    every consumer.**
-   When: touching `programio.py` write helpers or `bin/zfc` · Why: `src/zfc/plot.py`
+   When: touching `programio.py` write helpers or `src/zfc/cli.py` · Why: `src/zfc/plot.py`
    and downstream scripts index these columns (`zlfc`, `RRA_Score_*`,
    `Mean_Rank_*`, ...) · Expires: if an explicit, versioned output schema is adopted.
 
@@ -54,7 +54,7 @@ Read a doc only when its condition matches.
 
 4. **Version is single-sourced from `src/zfc/__init__.py::__version__`
    (read by hatchling via `pyproject.toml`).** Current: `0.1.7`.
-   When: every release/version change · Why: `bin/zfc --version` reads
+   When: every release/version change · Why: `zfc --version` reads
    `__version__` and packaging reads the same value · Expires: if the version
    moves elsewhere, update `pyproject.toml` accordingly.
 
@@ -77,6 +77,6 @@ Read a doc only when its condition matches.
    documented in `docs/algorithm.md` · Expires: remains while the CLI is public.
 
 8. **The `--outprefix` directory must already exist; the CLI does not create it.**
-   When: running or scripting `zfc` · Why: `bin/zfc` help states this and
+   When: running or scripting `zfc` · Why: `zfc --help` states this and
    `write_*` (via `to_csv`) does not make parent dirs · Expires: if the CLI
    changes to create directories.
