@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from zfc import zfoldchange
 
@@ -39,3 +40,40 @@ def test_zfoldchange_end_to_end():
     assert len(sg) == data.groupby(['gene', 'guide']).ngroups
     assert len(g) == data['gene'].nunique()
     assert len(train_data) > 100
+
+
+def test_seed_determinism():
+    data = _make_input()
+    _, sg_a, g_a, _, _ = zfoldchange(data, iteration=5, seed=42)
+    _, sg_b, g_b, _, _ = zfoldchange(data, iteration=5, seed=42)
+    assert sg_a['p'].equals(sg_b['p'])
+    assert g_a['p'].equals(g_b['p'])
+
+
+def test_negative_seed_uses_entropy():
+    data = _make_input()
+    zfoldchange(data, iteration=5, seed=-1)  # must not raise
+
+
+def test_zero_counts_do_not_produce_inf():
+    data = _make_input()
+    data.loc[0, 'ctrl'] = 0.0
+    data.loc[1, 'exp'] = 0.0
+    bar, sg, _, _, _ = zfoldchange(data, iteration=5, seed=0)
+    assert not np.isinf(bar['lfc']).any()
+    assert not np.isinf(bar['zlfc']).any()
+    assert not np.isinf(sg['zlfc']).any()
+
+
+def test_all_zero_column_raises():
+    data = _make_input()
+    data['ctrl'] = 0.0
+    with pytest.raises(ValueError):
+        zfoldchange(data, iteration=5, seed=0)
+
+
+def test_negative_counts_raise():
+    data = _make_input()
+    data.loc[0, 'ctrl'] = -5.0
+    with pytest.raises(ValueError):
+        zfoldchange(data, iteration=5, seed=0)
