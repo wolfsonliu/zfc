@@ -19,7 +19,10 @@ zfc = "zfc.cli:main"
 dev = ["pytest", "ruff"]
 
 [tool.hatch.version]
-path = "zfc/__init__.py"
+path = "src/zfc/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zfc"]
 
 [tool.ruff]
 target-version = "py311"

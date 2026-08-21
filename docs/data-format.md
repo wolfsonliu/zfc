@@ -15,7 +15,7 @@ gene	guide	barcode	ctrl	exp
 - `ctrl`, `exp` — raw counts (numeric; may be fractional for merged replicates).
 - `barcode` may equal `guide` when there is no iBAR (one barcode per guide).
 
-Source: `zfc/programio.py::read_raw_count` and `bin/zfc` help. Columns are
+Source: `src/zfc/programio.py::read_raw_count` and `bin/zfc` help. Columns are
 hard-coded and renamed to these canonical names on read.
 
 ## Input scenarios
@@ -35,7 +35,7 @@ hard-coded and renamed to these canonical names on read.
   Mean_Rank_up`; sorted ascending by `zlfc`.
 - `<outprefix>_gene.txt` — same columns as the sgRNA file, at gene level.
 
-Column lists are defined once in `zfc/programio.py`
+Column lists are defined once in `src/zfc/programio.py`
 (`write_bar_result`/`write_sg_result`/`write_g_result`) — that file is the
 single source of truth; plots read from these columns. The `--outprefix`
 directory must exist before analysis (the CLI does not create it).
@@ -47,7 +47,7 @@ directory must exist before analysis (the CLI does not create it).
 `sgrna_zlfc_hist`, `gene_zlfc_hist`, `sgrna_zlfc_rra_scatter`,
 `gene_zlfc_rra_scatter`, `sgrna_zlfc_rra_fdr_scatter`,
 `gene_zlfc_rra_fdr_scatter`, `lfcstd_ctrlmean` — each saved as `.png` and
-`.pdf`. See `zfc/plot.py::zfc_plot`.
+`.pdf`. See `src/zfc/plot.py::zfc_plot`.
 
 ## `bin/` counting scripts
 

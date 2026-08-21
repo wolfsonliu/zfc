@@ -6,9 +6,9 @@ distribution, p-value/FDR handling, or rank aggregation.
 Authoritative references: `README.md` ("Algorithm"), `doc/algorithm.tex`, and
 the cited papers (Xu et al. 2021; Zhu et al. 2019; Kolde et al. 2012).
 
-## Pipeline (`zfc/zfoldchange.py::zfoldchange`)
+## Pipeline (`src/zfc/zfoldchange.py::zfoldchange`)
 
-1. **Normalization** — `df_normalization` (`zfc/statsfunc.py`); small-count
+1. **Normalization** — `df_normalization` (`src/zfc/statsfunc.py`); small-count
    bump: try quantiles 0.05, 0.10, 0.15 (first non-empty wins after dropping
    zeros), else fall back to the 15% quantile of positive ctrl. The mean small
    count is added to every ctrl/exp count.
@@ -27,7 +27,7 @@ the cited papers (Xu et al. 2021; Zhu et al. 2019; Kolde et al. 2012).
 
 Returns `(bar_df, sg_df, g_df, train_data, reg)`.
 
-## Normalization methods (`zfc/statsfunc.py::df_normalization`)
+## Normalization methods (`src/zfc/statsfunc.py::df_normalization`)
 
 `total` (default), `median`, `upper_quartile` (0.75), `median_ratio`, `none`.
 Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
@@ -45,7 +45,7 @@ Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
     and add a test.
   - Expires: when the name is unified (prefer `upper_quartile`) and covered by a test.
 
-## Statistical helpers (`zfc/statsfunc.py`)
+## Statistical helpers (`src/zfc/statsfunc.py`)
 
 - `ecdf(x)` — empirical CDF returned as a callable (searchsorted over sorted x).
 - `p_adjust(p, method)` — `'BH'` (`bh_correction`) or `'Bonferroni'`.
@@ -72,7 +72,7 @@ Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
 2. **`median_ratio` failure calls `exit()`.** Both failure branches terminate
    the process and print a misleading "using total count normalization" message
    even though they do _not_ fall back. They should raise or actually fall back.
-   - Why: `zfc/statsfunc.py::df_normalization` lines that call `exit(...)`.
+   - Why: `src/zfc/statsfunc.py::df_normalization` lines that call `exit(...)`.
    - When: any normalization-quality or error-handling work.
    - Expires: when replaced with raise/fallback and tested.
 

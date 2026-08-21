@@ -51,13 +51,13 @@ alongside new or changed behavior; the contracts to lock are in
 - Runtime deps: numpy, scipy, pandas, matplotlib, scikit-learn (`sklearn` is
   the import name; the legacy PyPI alias is `sklearn`, but prefer
   `scikit-learn` in `pyproject.toml`).
-  - Why: the scientific stack used in `zfc/*.py`.
+  - Why: the scientific stack used in `src/zfc/*.py`.
   - When: whenever an import is added.
   - Expires: remains until the dependency list changes by design.
 
 ## Versioning
 
-Bump `zfc/__init__.py::__version__` (current: `0.1.7`); hatchling reads it for
+Bump `src/zfc/__init__.py::__version__` (current: `0.1.7`); hatchling reads it for
 packaging and `bin/zfc --version` reads it at runtime.
   - Why: version is single-sourced from one place.
   - When: every release.
@@ -66,7 +66,7 @@ packaging and `bin/zfc --version` reads it at runtime.
 ## Style & hygiene
 
 - Prefer plain, dependency-light functions; give math helpers a one-line
-  docstring citing their reference (existing pattern in `zfc/statsfunc.py`).
+  docstring citing their reference (existing pattern in `src/zfc/statsfunc.py`).
 - Delete dead code rather than leaving it (see "Known issues" in
   `docs/algorithm.md`).
 - Only ruff is configured for linting; do not introduce unrelated reformatting

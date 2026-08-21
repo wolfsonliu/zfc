@@ -38,21 +38,21 @@ Read a doc only when its condition matches.
 1. **The input count table is tab-separated with exactly the header
    `gene guide barcode ctrl exp`.**
    When: any I/O, CLI, or validation change · Why: `read_raw_count`
-   (`zfc/programio.py`) and `bin/zfc` hard-code these names · Expires: if a
+   (`src/zfc/programio.py`) and `bin/zfc` hard-code these names · Expires: if a
    configurable/aliased schema is introduced deliberately.
 
 2. **Do not change result-table columns or output filenames without updating
    every consumer.**
-   When: touching `programio.py` write helpers or `bin/zfc` · Why: `zfc/plot.py`
+   When: touching `programio.py` write helpers or `bin/zfc` · Why: `src/zfc/plot.py`
    and downstream scripts index these columns (`zlfc`, `RRA_Score_*`,
    `Mean_Rank_*`, ...) · Expires: if an explicit, versioned output schema is adopted.
 
-3. **Keep matplotlib headless.** `zfc/plot.py` must keep `matplotlib.use('Agg')`
+3. **Keep matplotlib headless.** `src/zfc/plot.py` must keep `matplotlib.use('Agg')`
    and never add interactive backends or `plt.show()`.
    When: any plotting change · Why: runs on servers/CI without a display ·
    Expires: if interactive/GUI plotting becomes a deliberate feature.
 
-4. **Version is single-sourced from `zfc/__init__.py::__version__`
+4. **Version is single-sourced from `src/zfc/__init__.py::__version__`
    (read by hatchling via `pyproject.toml`).** Current: `0.1.7`.
    When: every release/version change · Why: `bin/zfc --version` reads
    `__version__` and packaging reads the same value · Expires: if the version
