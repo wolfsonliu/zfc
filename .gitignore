@@ -3,7 +3,6 @@ tmp/*
 build/
 dist/
 zfc.egg-info/
-zfc/__pycache__/
 doc/auto
 *.aux
 *.bbl
