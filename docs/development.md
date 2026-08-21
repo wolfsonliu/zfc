@@ -5,17 +5,15 @@ and run the project, plus dependency/versioning/style conventions.
 
 ## Setup
 
-- `uv sync` creates `.venv`, installs dependencies + the `zfc` package + CLI
-  entry points (`zfc`, `library_count_sgrna`, `library_count_sgrna_with_barcode`).
-  - Why (source): the project is migrating from `setup.py` /
-    `python3 setup.py install` to a `pyproject.toml` + uv layout.
+- `uv sync` creates `.venv`, installs dependencies + the `zfc` package + the
+  `zfc` CLI entry point (declared in `pyproject.toml`).
+  - Why (source): packaging is `pyproject.toml` (hatchling) + uv.
   - When: first checkout, and after any dependency change.
   - Expires: if the packaging tool is replaced.
 
-> Status: `pyproject.toml` is not yet present. Writing it — with `[project]`,
-> `[project.scripts]` (move the three `bin/` entry points), a dev dependency
-> group (pytest, ruff), and `[tool.ruff]` — is the first improvement task.
-> Until then the legacy install is `python3 setup.py install`.
+The two bash counting scripts (`bin/library_count_sgrna`,
+`bin/library_count_sgrna_with_barcode`) are repo-only tools; run them as
+`./bin/...` — they are not installed onto PATH.
 
 ## Lint
 
@@ -42,9 +40,9 @@ output column stability, and a tiny end-to-end `zfoldchange` run.
 
 ## Run the CLI
 
-- `uv run zfc --help` (or `uv run bin/zfc --help` before entry points exist).
+- `uv run zfc --help` (installed entry point; `./bin/zfc` also works).
 - `library_count_sgrna` and `library_count_sgrna_with_barcode` are bash scripts
-  consumed from the shell; see `docs/data-format.md` for their I/O.
+  run from the repo as `./bin/...`; see `docs/data-format.md` for their I/O.
 
 ## Adding dependencies
 
@@ -58,11 +56,11 @@ output column stability, and a tiny end-to-end `zfoldchange` run.
 
 ## Versioning
 
-Bump `zfc/__init__.py::__version__` and `setup.py::version` together
-(current: `0.1.7`).
-  - Why: `bin/zfc --version` reads `__version__`; packaging reads `setup.py`.
+Bump `zfc/__init__.py::__version__` (current: `0.1.7`); hatchling reads it for
+packaging and `bin/zfc --version` reads it at runtime.
+  - Why: version is single-sourced from one place.
   - When: every release.
-  - Expires: when `pyproject.toml` single-sources the version.
+  - Expires: if the version moves elsewhere, update `pyproject.toml` accordingly.
 
 ## Style & hygiene
 
@@ -72,11 +70,3 @@ Bump `zfc/__init__.py::__version__` and `setup.py::version` together
   `docs/algorithm.md`).
 - Only ruff is configured for linting; do not introduce unrelated reformatting
   churn in files a change doesn't touch.
-
-## Migration checklist (first improvement task)
-
-1. Add `pyproject.toml` with `[project]`, `[project.scripts]`, dev group
-   (pytest, ruff), and `[tool.ruff]`.
-2. `uv lock` / `uv sync`; confirm `uv run zfc --help` works.
-3. Add a minimal test suite; make `uv run pytest` and `uvx ruff check` green.
-4. Remove `setup.py` only after the entry points and version are single-sourced.

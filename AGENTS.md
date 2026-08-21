@@ -15,15 +15,10 @@ per-gene result tables plus optional plots.
 
 ## Quick Start
 
-Workflow is `uv` (the repo is being migrated from `setup.py` to a
-`pyproject.toml` + uv layout — see `docs/development.md`).
-
 - `uv sync`            # create .venv; install deps + the zfc package + CLI entry points
 - `uvx ruff check`     # lint (add `--fix` to auto-fix what it can)
-- `uv run pytest`      # run tests (suite is introduced as part of the migration)
+- `uv run pytest`      # run tests
 - `uv run zfc --help`  # smoke-test the installed CLI
-
-Legacy path until `pyproject.toml` lands: `python3 setup.py install`.
 
 ## Topic Docs
 
@@ -57,17 +52,17 @@ Read a doc only when its condition matches.
    When: any plotting change · Why: runs on servers/CI without a display ·
    Expires: if interactive/GUI plotting becomes a deliberate feature.
 
-4. **Bump the version in exactly two places, in sync:** `zfc/__init__.py`
-   (`__version__`) and `setup.py` (`version=`). Current: `0.1.7`.
+4. **Version is single-sourced from `zfc/__init__.py::__version__`
+   (read by hatchling via `pyproject.toml`).** Current: `0.1.7`.
    When: every release/version change · Why: `bin/zfc --version` reads
-   `__version__`; packaging reads `setup.py` · Expires: when `pyproject.toml`
-   single-sources the version.
+   `__version__` and packaging reads the same value · Expires: if the version
+   moves elsewhere, update `pyproject.toml` accordingly.
 
 5. **Do not add a runtime dependency without updating the dependency spec.**
-   Runtime deps: numpy, scipy, pandas, matplotlib, scikit-learn (import name
-   `sklearn`).
-   When: adding any new import · Why: keeps installs reproducible · Expires: the
-   list itself moves to `pyproject.toml`; the rule remains while these are the deps.
+   Runtime deps are declared in `pyproject.toml` (`[project].dependencies`):
+   numpy, scipy, pandas, matplotlib, scikit-learn (import name `sklearn`).
+   When: adding any new import · Why: keeps installs reproducible · Expires:
+   remains while these are the deps.
 
 6. **Lint and tests must be clean before a change is considered done.**
    `uvx ruff check` (and `uv run pytest` once the suite exists) must pass.

@@ -24,12 +24,12 @@ in Linux, Mac OS, and Windows.
 
 ## Installation ##
 
-Clone this repository, then install the software.
+Clone this repository, then install the software with uv:
 
 ```{shell}
 $ git clone https://github.com/wolfsonliu/zfc.git
 $ cd zfc
-$ python3 setup.py install
+$ uv sync
 ```
 
 Or from pypi:

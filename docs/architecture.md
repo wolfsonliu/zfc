@@ -9,14 +9,16 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 - `doc/` — paper assets (LaTeX, figures, bib). Not runtime; don't edit here
   when changing behavior.
 - `README.md` — user documentation (algorithm, usage, examples, citations).
-- `setup.py` — legacy packaging (superseded by `pyproject.toml` in the uv migration).
-- `LICENSE` — GPLv3 or later (per `setup.py` classifiers).
+- `pyproject.toml` — build config (hatchling), project metadata, `zfc` entry point, ruff config.
+- `LICENSE` — GPLv3 or later (per `pyproject.toml`).
 
 ## Package: `zfc/`
 
 - `zfc/__init__.py` — public re-exports + `__version__`. Public API:
   `read_raw_count`, `write_bar_result`, `write_sg_result`, `write_g_result`,
   `zfoldchange`, `zfc_plot`.
+- `zfc/cli.py` — the `zfc` CLI: `main()` holds the argparse definition and
+  orchestration.
 - `zfc/programio.py` — I/O only. `read_raw_count` (input TSV → canonical
   DataFrame) and the three `write_*` output writers. Holds the column lists
   that define the output contract (see `docs/data-format.md`).
@@ -32,8 +34,8 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 
 ## `bin/` entry points
 
-- `bin/zfc` — Python CLI (argparse). Parses args → `read_raw_count` →
-  `zfoldchange` → `write_*` → optional `zfc_plot`. The canonical entry point.
+- `bin/zfc` — two-line shim that calls `zfc.cli.main()`, kept for direct
+  invocation. The installed command is the `[project.scripts]` entry point `zfc`.
 - `bin/library_count_sgrna` — bash; counts sgRNAs from paired-end FASTQ against
   a library, emitting `gene guide barcode count`.
 - `bin/library_count_sgrna_with_barcode` — bash; same, but also extracts the
