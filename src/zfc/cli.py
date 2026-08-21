@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import zfc
 
@@ -74,6 +75,15 @@ def main(argv=None):
     )
 
     parser.add_argument(
+        '--seed',
+        type=int,
+        default=0,
+        help='Random seed for the null-distribution permutations. ' +
+        'Default 0 (fixed) for reproducible output; ' +
+        'use -1 for nondeterministic output.'
+    )
+
+    parser.add_argument(
         '--plot',
         action='store_true',
         help='Output figures.'
@@ -86,8 +96,12 @@ def main(argv=None):
 
     args = vars(parser.parse_args(argv))
 
+    input_path = args['input']
+    if not os.path.isfile(input_path):
+        parser.error('input file not found: {}'.format(input_path))
+
     inputdata = zfc.read_raw_count(
-        args['input'],
+        input_path,
         gene_colname='gene',
         guide_colname='guide',
         barcode_colname='barcode',
@@ -100,7 +114,8 @@ def main(argv=None):
         top_n_sgrna=args['top_n_sgrna'],
         top_n_gene=args['top_n_gene'],
         iteration=args['null_iteration'],
-        normalization=args['normalization']
+        normalization=args['normalization'],
+        seed=args['seed'],
     )
 
     zfc.write_bar_result(
