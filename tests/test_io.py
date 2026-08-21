@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from zfc import (
     read_raw_count,
@@ -57,3 +58,10 @@ def test_write_g_result(tmp_path):
     path = tmp_path / 'out_gene.txt'
     write_g_result(g, str(path))
     assert _header_cols(path.read_text()) == SG_COLUMNS
+
+
+def test_read_raw_count_missing_column_raises(tmp_path):
+    path = tmp_path / 'bad.tsv'
+    path.write_text('gene\tguide\tctrl\texp\nA1BG\tG1\t100\t50\n')
+    with pytest.raises(ValueError, match='barcode'):
+        read_raw_count(str(path))

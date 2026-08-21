@@ -14,15 +14,19 @@ def read_raw_count(filepath,
                    ctrl_colname='ctrl',
                    exp_colname='exp'):
     data = pd.read_csv(filepath, header=0, sep='\t')
-    data = data[
-        [
-            gene_colname, guide_colname, barcode_colname,
-            ctrl_colname, exp_colname
-        ]
+    required = [
+        gene_colname, guide_colname, barcode_colname,
+        ctrl_colname, exp_colname,
     ]
+    missing = [c for c in required if c not in data.columns]
+    if missing:
+        raise ValueError(
+            'input is missing required column(s): {}'.format(', '.join(missing))
+        )
+    data = data[required]
     data.columns = ['gene', 'guide', 'barcode', 'ctrl', 'exp']
-    data.index = data[['gene', 'guide', 'barcode']].apply(
-        lambda a: '_'.join(a), axis=1
+    data.index = (
+        data['gene'] + '_' + data['guide'] + '_' + data['barcode']
     )
     return data
 
