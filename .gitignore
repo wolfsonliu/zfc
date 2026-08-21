@@ -1,3 +1,5 @@
+tmp/*
+
 build/
 dist/
 zfc.egg-info/
@@ -12,4 +14,7 @@ doc/auto
 *~
 *.o
 *.a
+.worktrees/
+.uv-cache/
+.uv-tools/
 
