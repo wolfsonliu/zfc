@@ -173,38 +173,6 @@ def df_mean_rank_aggregation(rank_matrix):
     return rank_score
 
 
-def df_rank_order_aggregation(rank_matrix):
-    # Stuart, J.M., Segal, E., Koller, D., and Kim, S.K. (2003). A
-    # Gene-Coexpression Network for Global Discovery of Conserved
-    # Genetic Modules. Science 302, 249.
-
-    # Aerts, S., Lambrechts, D., Maity, S., Van Loo, P., Coessens, B.,
-    # De Smet, F., Tranchevent, L.-C., De Moor, B., Marynen, P.,
-    # Hassan, B., et al. (2006). Gene prioritization through genomic
-    # data fusion. Nat Biotech 24, 537–544.
-
-    def Q(r):
-        factorial = np.vectorize(np.math.factorial)
-        r = np.array(r)
-        r = r[~np.isnan(r)]
-        r.sort()
-        rr = -1 * r[::-1]
-        k = len(rr)
-        v = list()
-        v.append(1)
-        irange = np.arange(1, k + 1)
-        for i in range(k):
-            nowv = -1 * (
-                np.array(v)[::-1] /
-                factorial(irange[0:i + 1]) *
-                (rr[i] ** irange[0:i + 1])
-            ).sum()
-            v.append(nowv)
-        theQ = np.math.factorial(k) * v[-1]
-        return theQ
-    return rank_matrix.apply(lambda x: Q(x), axis=1)
-
-
 def df_robust_rank_aggregation(rank_matrix):
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
