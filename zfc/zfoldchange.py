@@ -160,10 +160,9 @@ def zfoldchange(data,
             sg_ecdf_list[c] = ecdf(sg_null_list[c])
 
     # Calculate p value and FDR of sgRNA zlfc
-    sg_df['tp'] = sg_df.apply(
-        lambda a: sg_ecdf_list[a['count']](a['zlfc']),
-        axis=1
-    )
+    sg_df['tp'] = [
+        sg_ecdf_list[c](z) for c, z in zip(sg_df['count'], sg_df['zlfc'])
+    ]
     sg_df['p'] = sg_df['tp'].map(
         lambda a: a if a <= 0.5 else 1 - a
     )
@@ -205,10 +204,9 @@ def zfoldchange(data,
             g_ecdf_list[c] = ecdf(g_null_list[c])
 
     # Calculate p value and FDR of gene zlfc
-    g_df['tp'] = g_df.apply(
-        lambda a: g_ecdf_list[a['count']](a['zlfc']),
-        axis=1
-    )
+    g_df['tp'] = [
+        g_ecdf_list[c](z) for c, z in zip(g_df['count'], g_df['zlfc'])
+    ]
     g_df['p'] = g_df['tp'].map(
         lambda a: a if a <= 0.5 else 1 - a
     )
