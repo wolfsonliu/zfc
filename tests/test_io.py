@@ -8,12 +8,18 @@ from zfc import (
 )
 
 
+BAR_COLUMNS = ['ctrl', 'exp', 'fc', 'lfc', 'lfc_std', 'zlfc', 'p']
+
 SG_COLUMNS = [
     'zlfc', 'count', 'p', 'p_adj',
     'RRA_Score_down', 'RRA_Score_down_adj',
     'RRA_Score_up', 'RRA_Score_up_adj',
     'Mean_Rank_down', 'Mean_Rank_up',
 ]
+
+
+def _header_cols(text):
+    return text.splitlines()[0].split('\t')[1:]
 
 
 def test_read_raw_count(tmp_path):
@@ -36,24 +42,18 @@ def test_write_bar_result(tmp_path):
     }, index=['A1BG_G1_B1'])
     path = tmp_path / 'out_barcode.txt'
     write_bar_result(bar, str(path))
-    text = path.read_text()
-    for col in ['ctrl', 'exp', 'fc', 'lfc', 'lfc_std', 'zlfc', 'p']:
-        assert col in text
+    assert _header_cols(path.read_text()) == BAR_COLUMNS
 
 
 def test_write_sg_result(tmp_path):
     sg = pd.DataFrame({c: [1] for c in SG_COLUMNS}, index=['A1BG_G1'])
     path = tmp_path / 'out_sgrna.txt'
     write_sg_result(sg, str(path))
-    text = path.read_text()
-    for col in SG_COLUMNS:
-        assert col in text
+    assert _header_cols(path.read_text()) == SG_COLUMNS
 
 
 def test_write_g_result(tmp_path):
     g = pd.DataFrame({c: [1] for c in SG_COLUMNS}, index=['A1BG'])
     path = tmp_path / 'out_gene.txt'
     write_g_result(g, str(path))
-    text = path.read_text()
-    for col in SG_COLUMNS:
-        assert col in text
+    assert _header_cols(path.read_text()) == SG_COLUMNS

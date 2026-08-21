@@ -4,6 +4,14 @@ import pandas as pd
 from zfc import zfoldchange
 
 
+SG_COLUMNS = [
+    'zlfc', 'count', 'p', 'p_adj',
+    'RRA_Score_down', 'RRA_Score_down_adj',
+    'RRA_Score_up', 'RRA_Score_up_adj',
+    'Mean_Rank_down', 'Mean_Rank_up',
+]
+
+
 def _make_input(n_genes=50, n_guides=8, n_barcodes=4, seed=42):
     rng = np.random.default_rng(seed)
     rows = []
@@ -25,9 +33,9 @@ def test_zfoldchange_end_to_end():
     assert len(bar) == len(data)
     for col in ['ctrl', 'exp', 'fc', 'lfc', 'lfc_std', 'zlfc', 'p']:
         assert col in bar.columns
-    for col in ['zlfc', 'count', 'p', 'p_adj', 'RRA_Score_down', 'RRA_Score_up']:
+    for col in SG_COLUMNS:
         assert col in sg.columns
         assert col in g.columns
     assert len(sg) == data.groupby(['gene', 'guide']).ngroups
     assert len(g) == data['gene'].nunique()
-    assert not train_data.empty
+    assert len(train_data) > 100
