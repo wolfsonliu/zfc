@@ -65,7 +65,7 @@ Read a doc only when its condition matches.
    remains while these are the deps.
 
 6. **Lint and tests must be clean before a change is considered done.**
-   `uvx ruff check` (and `uv run pytest` once the suite exists) must pass.
+   `uvx ruff check` and `uv run pytest` must pass.
    When: before committing or reporting completion · Why: defined toolchain for
    this project (uv + ruff) · Expires: if the toolchain is replaced by an agreed alternative.
 
