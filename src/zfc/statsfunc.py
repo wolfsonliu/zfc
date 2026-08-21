@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import functools
 import scipy.stats as stats
+import warnings
 
 
 def ecdf(x):
@@ -124,9 +125,13 @@ def df_normalization(df, method):
     elif method == 'median_ratio':
         medianfactor = df_median_ratio_normfactor(df)
         if (medianfactor == 0).any():
-            exit('Median factor is zero, using total count normalization')
+            warnings.warn(
+                'Median factor is zero; using total count normalization'
+            )
         elif ((df == 0).sum(axis=0) / df.shape[0] > 0.45).any():
-            exit('Too many zeros in counts, using total count normalization')
+            warnings.warn(
+                'Too many zeros in counts; using total count normalization'
+            )
         else:
             normfactor = medianfactor
     elif method == 'upper_quartile':

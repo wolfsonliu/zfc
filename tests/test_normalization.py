@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from zfc.statsfunc import df_normalization, df_quantile_normfactor
 
@@ -41,3 +42,13 @@ def test_upper_quartile_uses_quantile_factor():
     expected = df.mul(df_quantile_normfactor(df), axis=1)
     assert result.equals(expected)
     assert not result.equals(df_normalization(df, 'total'))
+
+
+def test_median_ratio_falls_back_to_total_on_many_zeros():
+    df = pd.DataFrame({
+        'ctrl': [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        'exp': [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    })
+    with pytest.warns(UserWarning, match='Too many zeros'):
+        result = df_normalization(df, 'median_ratio')
+    assert result.equals(df_normalization(df, 'total'))
