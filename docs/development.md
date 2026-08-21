@@ -23,8 +23,9 @@ The two bash counting scripts (`bin/library_count_sgrna`,
   - When: before committing, on every change.
   - Expires: if an alternative is adopted.
 
-Ruff settings belong in the future `pyproject.toml` under `[tool.ruff]`. Keep
-the tree "ruff clean"; do not add `# noqa` unless it carries a one-line reason.
+Ruff settings live in `pyproject.toml` (`[tool.ruff]`, rule set pinned to
+`E4, E7, E9, F`). Keep the tree "ruff clean"; do not add `# noqa` unless it
+carries a one-line reason.
 
 ## Tests
 
@@ -33,10 +34,10 @@ the tree "ruff clean"; do not add `# noqa` unless it carries a one-line reason.
   - When: after code changes; in CI once wired.
   - Expires: if a different runner is adopted.
 
-Status: no test suite exists yet. Add tests under `tests/` that lock the I/O
-contract (`docs/data-format.md`) and the algorithm (`docs/algorithm.md`) with
-small fixtures. Priority coverage: the `upper_quartile` normalization branch,
-output column stability, and a tiny end-to-end `zfoldchange` run.
+A suite exists under `tests/` (10 tests): CLI smoke, normalization, I/O
+contract, and a small end-to-end `zfoldchange` run. Add small-fixture tests
+alongside new or changed behavior; the contracts to lock are in
+`docs/data-format.md` and `docs/algorithm.md`.
 
 ## Run the CLI
 
