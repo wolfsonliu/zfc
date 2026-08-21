@@ -53,7 +53,7 @@ Read a doc only when its condition matches.
    Expires: if interactive/GUI plotting becomes a deliberate feature.
 
 4. **Version is single-sourced from `src/zfc/__init__.py::__version__`
-   (read by hatchling via `pyproject.toml`).** Current: `0.1.7`.
+   (read by hatchling via `pyproject.toml`).** Current: `0.2.0`.
    When: every release/version change · Why: `zfc --version` reads
    `__version__` and packaging reads the same value · Expires: if the version
    moves elsewhere, update `pyproject.toml` accordingly.
@@ -73,7 +73,7 @@ Read a doc only when its condition matches.
    Accepts `{total, median, upper_quartile, median_ratio, none}`; changes must
    stay backward-compatible or be versioned.
    When: touching normalization code or the CLI · Why: users rely on the names;
-   note the known `upper_quartile`/`quantile` bug and stale README wording are
+   the former `upper_quartile`/`quantile` branch bug (fixed in 0.2.0) is
    documented in `docs/algorithm.md` · Expires: remains while the CLI is public.
 
 8. **The `--outprefix` directory must already exist; the CLI does not create it.**

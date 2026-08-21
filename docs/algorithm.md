@@ -33,25 +33,21 @@ Returns `(bar_df, sg_df, g_df, train_data, reg)`.
 Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
 `df_quantile_normfactor`, `df_median_ratio_normfactor`.
 
-### Known bug: `upper_quartile` branch never runs
+### `upper_quartile` branch (fixed in 0.2.0)
 
-- The CLI (`src/zfc/cli.py`) and the `df_normalization` assert accept `upper_quartile`,
-  but the code branch that applies the quantile factor checks `quantile`
-  (`elif method == 'quantile':`). Net effect: `--normalization upper_quartile`
-  silently falls through to `total` normalization. `README.md` also still shows
-  the old name `quantile`.
-  - Why (source): a rename between README/CLI and `statsfunc` was not completed.
-  - When: relevant if anyone relies on upper-quartile normalization — fix it
-    and add a test.
-  - Expires: when the name is unified (prefer `upper_quartile`) and covered by a test.
+`df_normalization` previously had a dead `elif method == 'quantile':` branch, so
+`--normalization upper_quartile` silently fell through to `total`. Fixed: the
+branch now checks `upper_quartile` and routes to `df_quantile_normfactor`
+(covered by `tests/test_normalization.py::test_upper_quartile_uses_quantile_factor`).
 
 ## Statistical helpers (`src/zfc/statsfunc.py`)
 
-- `ecdf(x)` — empirical CDF returned as a callable (searchsorted over sorted x).
+- `ecdf(x)` — empirical CDF returned as a callable (searchsorted over sorted x);
+  retained as a helper, though `zfoldchange` now uses the equivalent vectorized
+  `np.searchsorted(... , side='left')` directly.
 - `p_adjust(p, method)` — `'BH'` (`bh_correction`) or `'Bonferroni'`.
-- `df_robust_rank_aggregation(rank_matrix)` — RRA via beta-score rho (used).
+- `df_robust_rank_aggregation(rank_matrix)` — RRA via beta-score rho (used); vectorized.
 - `df_mean_rank_aggregation(rank_matrix)` — mean-rank normal approximation (used).
-- `df_rank_order_aggregation(rank_matrix)` — dead code; unused by the pipeline.
 
 ## Defaults & knobs
 
@@ -59,34 +55,23 @@ Implemented by `df_total_count_normfactor`, `df_median_normfactor`,
 - `--top-n-sgrna` / `--top-n-gene` default `None` → the median per-group barcode
   count is used as the rank-matrix width.
 
-## Known issues (fix deliberately; do not paper over)
+## Resolved issues (0.2.0)
 
-1. **Non-reproducible p-values.** Null distributions are built with
-   `df.sample(frac=1)` and no `random_state`, so p/FDR/RRA can vary between
-   runs of the same input. If reproducibility is requested, thread a fixed seed
-   through `zfoldchange`.
-   - Why: observed in `zfoldchange.py` (two `.sample(frac=1)` calls).
-   - When: reproducibility/regression work.
-   - Expires: when a seed is threaded through and locked by a test.
+All previously-documented issues are fixed and covered by tests:
 
-2. **`median_ratio` failure calls `exit()`.** Both failure branches terminate
-   the process and print a misleading "using total count normalization" message
-   even though they do _not_ fall back. They should raise or actually fall back.
-   - Why: `src/zfc/statsfunc.py::df_normalization` lines that call `exit(...)`.
-   - When: any normalization-quality or error-handling work.
-   - Expires: when replaced with raise/fallback and tested.
-
-3. **`df_rank_order_aggregation` uses `np.math.factorial`**, removed in
-   NumPy >= 2.0. It is dead code — delete it, or port it only if ever needed.
-   - Why: `np.math` is gone in NumPy 2; the function is not imported/used.
-   - When: NumPy 2 compatibility or dead-code cleanup.
-   - Expires: when the function is deleted or ported.
-
-4. **Division by zero is unguarded.** `fc = exp / ctrl` turns ctrl=0 (raw 0, or
-   NaN replaced by 0 up front) into inf/nan in `lfc`; the small-count bump
-   mitigates positive counts but there is no explicit guard.
-   - Why: `data.replace(np.nan, 0)` then direct division in `zfoldchange.py`.
-   - When: robustness/edge-case work.
-   - Expires: when an explicit zero-handling policy is added and tested.
+1. **Non-reproducible p-values** — fixed by threading a `seed` through
+   `zfoldchange` (default `0`; `-1` = nondeterministic) via
+   `np.random.default_rng`; `tests/test_zfoldchange.py::test_seed_determinism`.
+2. **`median_ratio` failure called `exit()`** — now `warnings.warn(...)` and
+   falls back to `total`;
+   `tests/test_normalization.py::test_median_ratio_falls_back_to_total_on_many_zeros`.
+3. **`df_rank_order_aggregation` used `np.math.factorial`** (removed in NumPy 2)
+   — function deleted.
+4. **Division by zero unguarded** — input validation (numeric, non-negative,
+   at-least-one-positive) plus a post-normalization positive-`ctrl` guard;
+   `tests/test_zfoldchange.py::test_zero_counts_do_not_produce_inf`,
+   `test_negative_counts_raise`, `test_all_zero_column_raises`.
+5. **`upper_quartile` fell through to `total`** — see the `upper_quartile`
+   section above.
 
 Change any numeric behavior only with a matching test (`docs/development.md`).

@@ -65,8 +65,8 @@ samples).
 ## Normalization option names
 
 `--normalization` accepts: `total`, `median`, `upper_quartile`, `median_ratio`,
-`none`. See `docs/algorithm.md` for the `upper_quartile` implementation bug —
-treat `upper_quartile` as effectively `total` until that is fixed.
+`none`. (The former `upper_quartile`/`quantile` branch bug was fixed in
+`0.2.0` — see `docs/algorithm.md`.)
 
 ## Rules
 

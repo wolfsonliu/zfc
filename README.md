@@ -65,12 +65,12 @@ optional arguments:
                         Output file prefix, can be the file directory path
                         with file name prefix. The directory in the outprefix
                         should be built before analysis.
-  --normalization  {total,median,quantile,median_ratio,none}
+  --normalization  {total,median,upper_quartile,median_ratio,none}
                         Normalization of raw count data, default is total.
                         Support method: total (Total sum normalization);
-                        median (Median normalization); quantile (Upper
-                        quantile normalization (0.75)); median_ratio (Median
-                        ratio normalization); none (No normalization). 
+                        median (Median normalization); upper_quartile (Upper
+                        quartile normalization (0.75)); median_ratio (Median
+                        ratio normalization); none (No normalization).
   --top-n-sgrna TOP_N_SGRNA
                         Only consider top n barcodes for each sgRNA. Default
                         to use all the data.
@@ -81,6 +81,9 @@ optional arguments:
                         The iteration to generate null distribution in
                         calculating the p value of genes. The larger the
                         better, but slower in calculation, default to be 100.
+  --seed SEED            Random seed for the null-distribution permutations.
+                        Default 0 (fixed) for reproducible output; use -1 for
+                        nondeterministic output.
   --plot                Output figures.
   --version             show program's version number and exit
 ```

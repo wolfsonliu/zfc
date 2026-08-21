@@ -57,7 +57,7 @@ alongside new or changed behavior; the contracts to lock are in
 
 ## Versioning
 
-Bump `src/zfc/__init__.py::__version__` (current: `0.1.7`); hatchling reads it for
+Bump `src/zfc/__init__.py::__version__` (current: `0.2.0`); hatchling reads it for
 packaging and `zfc --version` reads it at runtime.
   - Why: version is single-sourced from one place.
   - When: every release.
