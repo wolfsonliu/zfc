@@ -1,0 +1,34 @@
+import numpy as np
+import pandas as pd
+from scipy.stats import beta
+
+from zfc.statsfunc import df_robust_rank_aggregation
+
+
+def _reference_rra(rank_matrix):
+    """Independent, straightforward implementation of the documented RRA rho.
+
+    rho = min over j of clip(k * beta.cdf(r_j, j, k-j+1), 0, 1), where r_j are
+    the row's sorted non-NaN ranks and k is the number of non-NaN ranks.
+    """
+    out = []
+    for _, row in rank_matrix.iterrows():
+        vals = np.sort(row.to_numpy())
+        vals = vals[~np.isnan(vals)]
+        k = len(vals)
+        scores = beta.cdf(vals, np.arange(1, k + 1), np.arange(k, 0, -1))
+        out.append((scores * k).clip(0, 1).min())
+    return np.array(out)
+
+
+def test_robust_rank_aggregation_matches_reference():
+    rng = np.random.default_rng(0)
+    m = pd.DataFrame(rng.uniform(0, 1, (500, 5)))
+    m.iloc[::3, 3] = np.nan  # uneven NaN pattern per row
+    m.iloc[::5, 4] = np.nan
+
+    result = df_robust_rank_aggregation(m)
+    expected = _reference_rra(m)
+
+    assert list(result.index) == list(m.index)
+    assert np.array_equal(result.to_numpy(), expected)

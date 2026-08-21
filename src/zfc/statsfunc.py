@@ -204,20 +204,18 @@ def df_robust_rank_aggregation(rank_matrix):
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
     # meta-analysis. Bioinformatics 28, 573–580.
+    vals = np.asarray(rank_matrix, dtype=float)
+    sorted_vals = np.sort(vals, axis=1)          # NaN sorts to the end
+    k = (~np.isnan(sorted_vals)).sum(axis=1)     # non-NaN count per row
+    n_cols = sorted_vals.shape[1]
 
-    def beta_score(r):
-        r = np.array(r)
-        r.sort()
-        rr = r[~np.isnan(r)]
-        k = len(rr)
-        return stats.beta.cdf(rr, np.arange(1, k + 1), np.arange(k, 0, -1))
+    a = np.clip(np.arange(1, n_cols + 1), 1, None)      # 1..p per column
+    b = np.clip(k[:, None] - np.arange(n_cols), 1, None)  # k-j per row/col
+    beta_cdf = stats.beta.cdf(sorted_vals, a, b)
 
-    def rho_score(r):
-        r = np.array(r)
-        k = sum(~np.isnan(r))
-        return (beta_score(r) * k).clip(0, 1).min()
-
-    return rank_matrix.apply(lambda x: rho_score(x), axis=1)
+    masked = np.where(np.isnan(sorted_vals), np.nan, beta_cdf)
+    scores = np.nanmin(np.clip(k[:, None] * masked, 0, 1), axis=1)
+    return pd.Series(scores, index=rank_matrix.index)
 
 
 def gini(arr):
