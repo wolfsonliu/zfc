@@ -4,11 +4,11 @@
 
 `zfc` is correct but slow and has several latent bugs. On real iBAR screening
 data (`tmp/REP_A549_{High,HL,Low}.txt`, each ~233k barcode rows → ~58k sgRNAs →
-~19k genes), `zfoldchange(..., iteration=100)` extrapolates to **~11 min per
-file** (~33 min for all three). Most of that time is spent in Python-level
-row-wise loops, and several documented issues (`docs/algorithm.md` "Known
-issues") plus a few undocumented inefficiencies reduce correctness and
-robustness.
+~19k genes), `zfoldchange(..., iteration=100)` takes **~82s per file** (~4 min
+for all three, measured on `REP_A549_High.txt`). Most of that time is spent in
+Python-level row-wise loops, and several documented issues
+(`docs/algorithm.md` "Known issues") plus a few undocumented inefficiencies
+reduce correctness and robustness.
 
 Goal: make the pipeline materially faster, fix the bugs, and keep the public
 output contract (columns, filenames, sorting, header names) unchanged.
@@ -176,8 +176,9 @@ not-NaN counting idiom for consistency if convenient.
 ## Success Criteria
 
 - `uvx ruff check` clean; `uv run pytest` green (existing + new tests).
-- Single file at `iteration=100` drops from ~11 min to **~1–2 min (≥5×)**;
-  record before/after timings on `REP_A549_High.txt`.
+- Single file at `iteration=100` drops from ~82s to **~4–6s (≥10×**, target is
+  ~15–20× once the rank-matrix build becomes the remaining bottleneck); record
+  before/after timings on `REP_A549_High.txt`.
 - RRA output matches old row-wise implementation bit-for-bit (parity test).
 - Same `--seed` → identical output twice; columns/filenames/sorting unchanged.
 - All five documented bugs (upper_quartile, median_ratio exit, dead
