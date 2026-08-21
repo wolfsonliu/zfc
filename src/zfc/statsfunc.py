@@ -129,7 +129,7 @@ def df_normalization(df, method):
             exit('Too many zeros in counts, using total count normalization')
         else:
             normfactor = medianfactor
-    elif method == 'quantile':
+    elif method == 'upper_quartile':
         normfactor = df_quantile_normfactor(df)
     elif method == 'median':
         normfactor = df_median_normfactor(df)
