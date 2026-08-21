@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zfc"
+dynamic = ["version"]
+description = "Calculate z-scored log2 fold change for pooled CRISPR screening count data."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Zhiheng Liu", email = "zhiheng.liu@pku.edu.cn" }]
+dependencies = ["numpy", "scipy", "pandas", "matplotlib", "scikit-learn"]
+
+[project.scripts]
+zfc = "zfc.cli:main"
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.hatch.version]
+path = "zfc/__init__.py"
+
+[tool.ruff]
+target-version = "py311"

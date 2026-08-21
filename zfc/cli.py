@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+
+import argparse
+
+import zfc
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog='zfc',
+        description='Calculate fold change of screening data ' +
+        '(zscore log2 fold change).'
+    )
+
+    parser.add_argument(
+        '-i', '--input',
+        action='store',
+        help='Raw count table with header should include' +
+        ': <gene>, <guide>, <barcode>, <ctrl>, <exp>.' +
+        '<ctrl> is the raw counts of control group, ' +
+        '<exp> is the raw counts of treatment group. ' +
+        ' For screening without barcode, ' +
+        'the barcode column can be the same with guide.'
+    )
+
+    parser.add_argument(
+        '-o', '--outprefix',
+        action='store',
+        default='zfc_out',
+        help='Output file prefix, ' +
+        'can be the file directory path with file name prefix.' +
+        ' The directory in the outprefix should be built before analysis.'
+    )
+
+    parser.add_argument(
+        '--normalization',
+        action='store',
+        default='total',
+        choices=['total', 'median', 'upper_quartile', 'median_ratio', 'none'],
+        help='Normalization of raw count data, default is total. ' +
+        'Support method: ' +
+        'total (Total sum normalization); ' +
+        'median (Median normalization); ' +
+        'upper_quartile (Upper quartile normalization (0.75)); ' +
+        'median_ratio (Median ratio normalization); ' +
+        'none (No normalization).'
+    )
+
+    parser.add_argument(
+        '--top-n-sgrna',
+        type=int,
+        action='store',
+        default=None,
+        help='Only consider top n barcodes for each sgRNA. ' +
+        'Default to use all the data.'
+    )
+
+    parser.add_argument(
+        '--top-n-gene',
+        type=int,
+        action='store',
+        default=None,
+        help='Only consider top n barcodes for each gene. ' +
+        'Default to use all the data.'
+    )
+
+    parser.add_argument(
+        '--null-iteration',
+        type=int,
+        action='store',
+        default=100,
+        help='The iteration to generate null distribution ' +
+        'in calculating the p value of genes. ' +
+        'The larger the better, but slower in calculation, ' +
+        'default to be 100.'
+    )
+
+    parser.add_argument(
+        '--plot',
+        action='store_true',
+        help='Output figures.'
+    )
+
+    parser.add_argument(
+        '--version', action='version',
+        version='%(prog)s version: ' + zfc.__version__
+    )
+
+    args = vars(parser.parse_args(argv))
+
+    inputdata = zfc.read_raw_count(
+        args['input'],
+        gene_colname='gene',
+        guide_colname='guide',
+        barcode_colname='barcode',
+        ctrl_colname='ctrl',
+        exp_colname='exp'
+    )
+
+    barresult, sgresult, gresult, train_data, lm = zfc.zfoldchange(
+        inputdata,
+        top_n_sgrna=args['top_n_sgrna'],
+        top_n_gene=args['top_n_gene'],
+        iteration=args['null_iteration'],
+        normalization=args['normalization']
+    )
+
+    zfc.write_bar_result(
+        barresult,
+        '_'.join([args['outprefix'], 'barcode.txt'])
+    )
+
+    zfc.write_sg_result(
+        sgresult,
+        '_'.join([args['outprefix'], 'sgrna.txt'])
+    )
+
+    zfc.write_g_result(
+        gresult,
+        '_'.join([args['outprefix'], 'gene.txt'])
+    )
+
+    if args['plot']:
+        zfc.zfc_plot(
+            args['outprefix'], inputdata,
+            barresult, sgresult, gresult,
+            train_data, lm
+        )
+
+
+if __name__ == '__main__':
+    main()
