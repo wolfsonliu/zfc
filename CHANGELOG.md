@@ -21,6 +21,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   light y-grid, 150 dpi output, and consistent typography. Numeric results and
   output file names are unchanged.
 - Updated `docs/data-format.md` to document the new plot outputs.
+- Added PyPI project metadata to `pyproject.toml` (project URLs, classifiers,
+  keywords).
 
 ### Fixed
 - Constrained the p-value histograms to their actual `[0, 0.5]` support, so the
