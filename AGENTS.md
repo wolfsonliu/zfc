@@ -53,7 +53,7 @@ Read a doc only when its condition matches.
    Expires: if interactive/GUI plotting becomes a deliberate feature.
 
 4. **Version is single-sourced from `src/zfc/__init__.py::__version__`
-   (read by hatchling via `pyproject.toml`).** Current: `0.2.0`.
+   (read by hatchling via `pyproject.toml`).** Current: `0.2.1`.
    When: every release/version change · Why: `zfc --version` reads
    `__version__` and packaging reads the same value · Expires: if the version
    moves elsewhere, update `pyproject.toml` accordingly.
