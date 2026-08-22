@@ -46,8 +46,9 @@ directory must exist before analysis (the CLI does not create it).
 `lfc_normcount_scatter`, `zlfc_normcount_scatter`, `lfc_std_scatter`,
 `sgrna_zlfc_hist`, `gene_zlfc_hist`, `sgrna_zlfc_rra_scatter`,
 `gene_zlfc_rra_scatter`, `sgrna_zlfc_rra_fdr_scatter`,
-`gene_zlfc_rra_fdr_scatter`, `lfcstd_ctrlmean` — each saved as `.png` and
-`.pdf`. See `src/zfc/plot.py::zfc_plot`.
+`gene_zlfc_rra_fdr_scatter`, `gene_volcano`, `sgrna_volcano`, `gene_ma`,
+`gene_top_hits`, `sgrna_p_hist`, `gene_p_hist`, `lfcstd_ctrlmean` — each
+saved as `.png` and `.pdf`. See `src/zfc/plot.py::zfc_plot`.
 
 ## `bin/` counting scripts
 

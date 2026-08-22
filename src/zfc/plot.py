@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from .statsfunc import gini
 
 # Blue theme palette (see docs/specs/2026-08-22-plot-theme-design.md).
@@ -18,6 +19,13 @@ BLUE_LIGHT = '#E8F1FE'
 ACCENT = '#FF8C00'
 GRID = '#D6DEE8'
 TEXT_MUTED = '#5A6B7B'
+NEUTRAL = '#9AA8B8'
+
+# Default significance thresholds / limits for the result figures.
+VOLCANO_FDR = 0.05
+VOLCANO_X = 2.0
+TOP_N_LABEL = 15
+TOP_N_HITS = 20
 
 
 def _apply_theme():
@@ -43,6 +51,10 @@ def _style_ax(ax, grid=True):
     ax.spines['right'].set_visible(False)
     if grid:
         ax.grid(axis='y', color=GRID, linewidth=0.5, alpha=0.6)
+
+
+def _log10p(values):
+    return -np.log10(np.maximum(values, np.finfo(float).tiny))
 
 
 def _save(fig, outprefix, name):
@@ -299,6 +311,109 @@ def zlfc_rrafdr_scatter(data):
     return fig
 
 
+def zlfc_volcano(data, top_n=None):
+    zlfc = data['zlfc'].to_numpy()
+    p_adj = data['p_adj'].to_numpy()
+    y = _log10p(p_adj)
+    sig_up = (zlfc > VOLCANO_X) & (p_adj < VOLCANO_FDR)
+    sig_down = (zlfc < -VOLCANO_X) & (p_adj < VOLCANO_FDR)
+
+    colors = np.full(len(data), NEUTRAL)
+    colors[sig_up] = ACCENT
+    colors[sig_down] = BLUE
+
+    fig, axes = plt.subplots(1, 1, figsize=(6.4, 6.4))
+    axes.scatter(zlfc, y, c=colors, s=12, alpha=0.35, edgecolor='none')
+    axes.axhline(
+        -np.log10(VOLCANO_FDR), color=BLUE_DEEP,
+        linestyle='dashed', linewidth=1
+    )
+    axes.axvline(VOLCANO_X, color=BLUE_DEEP, linestyle='dashed', linewidth=1)
+    axes.axvline(-VOLCANO_X, color=BLUE_DEEP, linestyle='dashed', linewidth=1)
+    axes.set_xlabel('Z score of $log_{2}$ fold change')
+    axes.set_ylabel('$-log_{10}$(adjusted p-value)')
+
+    if top_n:
+        sig_mask = sig_up | sig_down
+        order = np.argsort(y)[::-1]
+        labeled = 0
+        for i in order:
+            if not sig_mask[i]:
+                continue
+            name = data.index[i]
+            if not isinstance(name, str):
+                name = '_'.join(map(str, name))
+            axes.annotate(
+                str(name), (zlfc[i], y[i]),
+                fontsize=8, color=BLUE_DEEP,
+                xytext=(3, 3), textcoords='offset points'
+            )
+            labeled += 1
+            if labeled >= top_n:
+                break
+
+    _style_ax(axes)
+    return fig
+
+
+def ma_plot(gresult, barresult):
+    abun = (barresult['ctrl'] + barresult['exp']).groupby(level=0).mean() / 2
+    x = np.log2(abun.reindex(gresult.index).to_numpy())
+    y = gresult['zlfc'].to_numpy()
+
+    fig, axes = plt.subplots(1, 1)
+    axes.scatter(x, y, color=BLUE, s=12, alpha=0.35, edgecolor='none')
+    axes.axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
+    axes.set_xlabel('$log_{2}$(mean normalized count)')
+    axes.set_ylabel('Z score of $log_{2}$ fold change')
+    _style_ax(axes)
+    return fig
+
+
+def top_hits_rank(data, top_n=TOP_N_HITS):
+    up = data.nlargest(top_n, 'zlfc')
+    down = data.nsmallest(top_n, 'zlfc')
+    sel = pd.concat([down, up]).drop_duplicates().sort_values('zlfc')
+
+    fig, axes = plt.subplots(1, 1, figsize=(6.4, 0.28 * len(sel) + 2))
+    colors = np.where(sel['zlfc'].to_numpy() < 0, BLUE, ACCENT)
+    axes.barh(
+        range(len(sel)), sel['zlfc'], color=colors,
+        height=0.7, edgecolor='none'
+    )
+    axes.axvline(0, color=BLUE_DEEP, linewidth=1)
+
+    ticks = [
+        '{}{}'.format(str(g), '*' if p < VOLCANO_FDR else '')
+        for g, p in zip(sel.index, sel['p_adj'])
+    ]
+    axes.set_yticks(range(len(sel)))
+    axes.set_yticklabels(ticks, fontsize=8)
+    axes.set_xlabel('Z score of $log_{2}$ fold change')
+    axes.set_title('Top {} depleted / enriched genes'.format(top_n))
+    _style_ax(axes)
+    return fig
+
+
+def p_hist(data):
+    fig, axes = plt.subplots(1, 1)
+    axes.hist(
+        data['p'], bins=100,
+        color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6
+    )
+    expected = len(data) / 100
+    axes.axhline(expected, color=ACCENT, linestyle='dashed', linewidth=1.2)
+    axes.text(
+        0.98, expected, 'uniform expectation',
+        ha='right', va='bottom', fontsize=8, color=TEXT_MUTED
+    )
+    axes.set_xlabel('p-value')
+    axes.set_ylabel('Counts')
+    axes.set_title('Distribution of permutation p-values')
+    _style_ax(axes)
+    return fig
+
+
 def zfc_plot(outprefix, inputdata,
              barresult, sgresult, gresult,
              train_data, lm):
@@ -314,4 +429,10 @@ def zfc_plot(outprefix, inputdata,
     _save(zlfc_rra_scatter(gresult), outprefix, 'gene_zlfc_rra_scatter')
     _save(zlfc_rrafdr_scatter(sgresult), outprefix, 'sgrna_zlfc_rra_fdr_scatter')
     _save(zlfc_rrafdr_scatter(gresult), outprefix, 'gene_zlfc_rra_fdr_scatter')
+    _save(zlfc_volcano(gresult, top_n=TOP_N_LABEL), outprefix, 'gene_volcano')
+    _save(zlfc_volcano(sgresult, top_n=None), outprefix, 'sgrna_volcano')
+    _save(ma_plot(gresult, barresult), outprefix, 'gene_ma')
+    _save(top_hits_rank(gresult), outprefix, 'gene_top_hits')
+    _save(p_hist(sgresult), outprefix, 'sgrna_p_hist')
+    _save(p_hist(gresult), outprefix, 'gene_p_hist')
     _save(lfcstd_ctrlmean_figure(train_data, lm), outprefix, 'lfcstd_ctrlmean')

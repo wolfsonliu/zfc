@@ -22,3 +22,4 @@ def test_zfc_plot_writes_outputs(tmp_path):
     assert (tmp_path / 'out_lorenz.png').exists()
     assert (tmp_path / 'out_gene_zlfc_hist.png').exists()
     assert (tmp_path / 'out_sgrna_zlfc_rra_fdr_scatter.pdf').exists()
+    assert (tmp_path / 'out_gene_volcano.png').exists()
