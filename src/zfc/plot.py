@@ -398,15 +398,17 @@ def top_hits_rank(data, top_n=TOP_N_HITS):
 def p_hist(data):
     fig, axes = plt.subplots(1, 1)
     axes.hist(
-        data['p'], bins=100,
+        data['p'], bins=100, range=(0, 0.5),
         color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6
     )
     expected = len(data) / 100
     axes.axhline(expected, color=ACCENT, linestyle='dashed', linewidth=1.2)
     axes.text(
-        0.98, expected, 'uniform expectation',
-        ha='right', va='bottom', fontsize=8, color=TEXT_MUTED
+        0.98, 0.95, 'uniform expectation',
+        transform=axes.transAxes, ha='right', va='top',
+        fontsize=8, color=TEXT_MUTED
     )
+    axes.set_xlim(0, 0.5)
     axes.set_xlabel('p-value')
     axes.set_ylabel('Counts')
     axes.set_title('Distribution of permutation p-values')
