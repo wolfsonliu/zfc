@@ -99,8 +99,9 @@ no statistical-convention changes, no performance work, no new features.
 
 7. **`plot.py` cleanup.**
    - Extract the shared 2×4 scatter/histogram layout used by
-     `normcount_scatter`, `lfc_normcount_scatter`, `zlfc_normcount_scatter`
-     into one parameterized builder (da/dx/dy + labels).
+     `lfc_normcount_scatter` and `zlfc_normcount_scatter` into one
+     parameterized `_lfc_scatter` builder; `normcount_scatter` (2×2) stays
+     separate.
    - Rename `counts_boxplot(inputdata, sgresult)`'s `sgresult` parameter to
      `barresult` (it is called with `barresult`, the normalized counts frame).
    - Vectorize `gini` (`np.dot` instead of the Python `sum` loop). Note: the
