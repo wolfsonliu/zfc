@@ -440,7 +440,7 @@ def _rank_aggregation(bar_df: pd.DataFrame, level: str, top_n: int | None) -> di
         top_n = int(bar_df.groupby(level=group_level)['zlfc'].count().median())
 
     matrices = {}
-    for rank_col, ascending in [('rank_down', True), ('rank_up', False)]:
+    for rank_col, ascending in [('rank_down', True), ('rank_up', True)]:
         m = bar_df[[rank_col]].copy()
         m.loc[:, 'groupid'] = m.groupby(level=group_level)[rank_col].rank(
             method='first', ascending=ascending
