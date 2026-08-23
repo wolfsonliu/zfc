@@ -48,3 +48,9 @@ def test_missing_input_errors(tmp_path):
     with pytest.raises(SystemExit) as exc_info:
         main(['-i', str(tmp_path / 'nope.tsv'), '--outprefix', str(tmp_path / 'o')])
     assert exc_info.value.code == 2
+
+
+def test_missing_input_flag_errors():
+    with pytest.raises(SystemExit) as exc_info:
+        main([])  # no -i at all
+    assert exc_info.value.code == 2

@@ -14,6 +14,7 @@ def main(argv=None):
     parser.add_argument(
         '-i', '--input',
         action='store',
+        required=True,
         help='Raw count table with header should include' +
         ': <gene>, <guide>, <barcode>, <ctrl>, <exp>.' +
         '<ctrl> is the raw counts of control group, ' +
