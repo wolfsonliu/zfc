@@ -859,11 +859,13 @@ git commit -m "refactor: add type annotations to public API and statsfunc"
 ## Task 6: Plot cleanup (rename, dedupe, vectorize gini)
 
 **Files:**
-- Modify: `src/zfc/plot.py`
+- Modify: `src/zfc/plot.py` (parameter rename + scatter dedupe)
+- Modify: `src/zfc/statsfunc.py` (`gini` is defined here, not in plot.py)
 
-- [ ] **Step 1: Replace `gini`**
+- [ ] **Step 1: Replace `gini` (in `src/zfc/statsfunc.py`)**
 
-Replace the existing `gini` body (lines 194-203) with:
+`gini` lives in `src/zfc/statsfunc.py` (the lines numbered ~194-203 there);
+`src/zfc/plot.py` only imports it. Replace its body with:
 
 ```python
 def gini(arr: np.ndarray) -> float:
