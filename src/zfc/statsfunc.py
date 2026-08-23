@@ -3,6 +3,9 @@
 # Author: Wolfson Liu
 # Email: wolfsonliu@live.com
 ####################
+
+from __future__ import annotations
+
 import pandas as pd
 import numpy as np
 import functools
@@ -10,7 +13,7 @@ import scipy.stats as stats
 import warnings
 
 
-def ecdf(x):
+def ecdf(x: np.ndarray) -> functools.partial:
     '''Calculate the empirical cumulative density function
        ====================
        Return a cumulative density function based
@@ -33,7 +36,7 @@ def ecdf(x):
     return functools.partial(childfunc, x=x, y=y)
 
 
-def bonferroni_correction(pvals):
+def bonferroni_correction(pvals: np.ndarray) -> np.ndarray:
     '''Bonferroni multitest p value correction'''
 
     pvals = np.asarray(pvals)
@@ -44,8 +47,11 @@ def bonferroni_correction(pvals):
     return pvals_corrected
 
 
-def bh_correction(pvals):
-    '''BH multitest p value correction'''
+def bh_correction(pvals: np.ndarray) -> np.ndarray:
+    '''BH multitest p value correction.
+
+    Benjamini, Y., and Hochberg, Y. (1995). J. Roy. Stat. Soc. B 57, 289-300.
+    '''
 
     pvals = np.asarray(pvals)
     n = len(pvals)
@@ -59,7 +65,7 @@ def bh_correction(pvals):
     return pvals_corrected
 
 
-def p_adjust(pvals, method='BH'):
+def p_adjust(pvals, method: str = 'BH'):
     assert method in ['BH', 'Bonferroni'], 'Adjust method should be in: BH, Bonferroni'
     adjust_func = {
         'BH': bh_correction,
@@ -69,7 +75,7 @@ def p_adjust(pvals, method='BH'):
     return adjust_func[method](pvals)
 
 
-def df_median_ratio_normfactor(df):
+def df_median_ratio_normfactor(df: pd.DataFrame) -> pd.Series:
     '''
     Normalize input data indicated by the label.
     Now only median ratio normalization is available.
@@ -83,19 +89,19 @@ def df_median_ratio_normfactor(df):
     return normfactor
 
 
-def df_total_count_normfactor(df):
+def df_total_count_normfactor(df: pd.DataFrame) -> pd.Series:
     colsum = df.sum(axis=0)
     normfactor = colsum.mean() / colsum
     return normfactor
 
 
-def df_median_normfactor(df):
+def df_median_normfactor(df: pd.DataFrame) -> pd.Series:
     colmedian = df.median(axis=0)
     normfactor = colmedian.mean() / colmedian
     return normfactor
 
 
-def df_quantile_normfactor(df, quantile=0.75):
+def df_quantile_normfactor(df: pd.DataFrame, quantile: float = 0.75) -> pd.Series:
     '''
     From edgeR .calcFactorQuantile
     '''
@@ -104,7 +110,7 @@ def df_quantile_normfactor(df, quantile=0.75):
     return y.quantile(quantile, axis=0)
 
 
-def df_normalization(df, method):
+def df_normalization(df: pd.DataFrame, method: str) -> pd.DataFrame:
     '''
     Normalization of raw count data.
 
@@ -144,7 +150,8 @@ def df_normalization(df, method):
     return result
 
 
-def df_smallcount(df, quantile=0.1, drop0=True):
+def df_smallcount(df: pd.DataFrame, quantile: float = 0.1,
+                  drop0: bool = True) -> np.ndarray:
     dfquantile = df.quantile(quantile, axis=0)
     smallidx = (df <= dfquantile).all(axis=1)
     smallcount = np.asarray(df[smallidx]).ravel()
@@ -153,7 +160,7 @@ def df_smallcount(df, quantile=0.1, drop0=True):
     return smallcount
 
 
-def df_mean_rank_aggregation(rank_matrix):
+def df_mean_rank_aggregation(rank_matrix: pd.DataFrame) -> pd.Series:
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
     # meta-analysis. Bioinformatics 28, 573–580.
@@ -173,7 +180,7 @@ def df_mean_rank_aggregation(rank_matrix):
     return rank_score
 
 
-def df_robust_rank_aggregation(rank_matrix):
+def df_robust_rank_aggregation(rank_matrix: pd.DataFrame) -> pd.Series:
     # Kolde, R., Laur, S., Adler, P., and Vilo, J. (2012). Robust rank
     # aggregation for gene list integration and
     # meta-analysis. Bioinformatics 28, 573–580.
@@ -191,7 +198,7 @@ def df_robust_rank_aggregation(rank_matrix):
     return pd.Series(scores, index=rank_matrix.index)
 
 
-def gini(arr):
+def gini(arr: np.ndarray) -> float:
     '''
     Using R library ineq, Gini function
     '''

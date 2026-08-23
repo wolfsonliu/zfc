@@ -4,15 +4,17 @@
 # Email: wolfsonliu@live.com
 ####################
 
+from __future__ import annotations
+
 import pandas as pd
 
 
-def read_raw_count(filepath,
-                   gene_colname='gene',
-                   guide_colname='guide',
-                   barcode_colname='barcode',
-                   ctrl_colname='ctrl',
-                   exp_colname='exp'):
+def read_raw_count(filepath: str,
+                   gene_colname: str = 'gene',
+                   guide_colname: str = 'guide',
+                   barcode_colname: str = 'barcode',
+                   ctrl_colname: str = 'ctrl',
+                   exp_colname: str = 'exp') -> pd.DataFrame:
     data = pd.read_csv(filepath, header=0, sep='\t')
     required = [
         gene_colname, guide_colname, barcode_colname,
@@ -31,14 +33,14 @@ def read_raw_count(filepath,
     return data
 
 
-def write_bar_result(data, filepath):
+def write_bar_result(data: pd.DataFrame, filepath: str) -> None:
     data[[
         'ctrl', 'exp', 'fc', 'lfc', 'lfc_std', 'zlfc', 'p'
     ]].sort_index(
     ).to_csv(filepath, index=True, sep='\t')
 
 
-def write_sg_result(data, filepath):
+def write_sg_result(data: pd.DataFrame, filepath: str) -> None:
     data[[
         'zlfc', 'count',
         'p', 'p_adj',
@@ -50,7 +52,7 @@ def write_sg_result(data, filepath):
     ).to_csv(filepath, index=True, sep='\t')
 
 
-def write_g_result(data, filepath):
+def write_g_result(data: pd.DataFrame, filepath: str) -> None:
     data[[
         'zlfc', 'count',
         'p', 'p_adj',
