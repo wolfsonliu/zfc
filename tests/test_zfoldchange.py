@@ -77,3 +77,10 @@ def test_negative_counts_raise():
     data.loc[0, 'ctrl'] = -5.0
     with pytest.raises(ValueError):
         zfoldchange(data, iteration=5, seed=0)
+
+
+def test_missing_column_raises_value_error():
+    data = _make_input()
+    data = data.drop(columns=['barcode'])
+    with pytest.raises(ValueError, match='barcode'):
+        zfoldchange(data, iteration=5, seed=0)

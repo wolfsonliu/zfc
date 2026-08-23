@@ -23,8 +23,14 @@ def zfoldchange(data,
                 seed=0):
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
-    for x in ['gene', 'guide', 'barcode', 'ctrl', 'exp']:
-        assert x in data.columns, 'data should have column: {}'.format(x)
+    missing = [
+        c for c in ['gene', 'guide', 'barcode', 'ctrl', 'exp']
+        if c not in data.columns
+    ]
+    if missing:
+        raise ValueError(
+            'data should have column(s): {}'.format(', '.join(missing))
+        )
 
     data = data.copy()
 
