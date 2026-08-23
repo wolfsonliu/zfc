@@ -12,15 +12,10 @@ or without replicates. Please cite us [(Xu et al., 2021)][2]:
 
 ## Dependency ##
 
-ZFC is designed with python3 and requires packages that are available
-in Linux, Mac OS, and Windows.
-
-* Python3.x
-* numpy >= 1.10
-* scipy >= 1.0
-* pandas >= 0.16
-* matplotlib >= 2.0
-* sklearn >= 0.20
+ZFC requires Python 3.11 or newer and installs its runtime dependencies
+(numpy, scipy, pandas, matplotlib, scikit-learn) automatically via `uv sync`
+or `pip install`. Development dependencies (pytest, ruff) are installed with
+`uv sync` from the `dev` dependency group.
 
 ## Installation ##
 
@@ -47,25 +42,26 @@ to create virual environment for the ZFC software.
 The help of ZFC software:
 
 ```{shell}
-usage: zfc [-h] [-i INPUT] [-o OUTPREFIX] [--punish-rate PUNISH_RATE]
-           [--n-sd N_SD] [--null-iteration NULL_ITERATION] [--plot]
+usage: zfc [-h] -i INPUT [-o OUTPREFIX]
+           [--normalization {total,median,upper_quartile,median_ratio,none}]
+           [--top-n-sgrna TOP_N_SGRNA] [--top-n-gene TOP_N_GENE]
+           [--null-iteration NULL_ITERATION] [--seed SEED] [--plot]
            [--version]
 
 Calculate fold change of screening data (zscore log2 fold change).
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        Raw count table with header should include: <gene>,
+  -i, --input INPUT     Raw count table with header should include: <gene>,
                         <guide>, <barcode>, <ctrl>, <exp>.<ctrl> is the raw
                         counts of control group, <exp> is the raw counts of
                         treatment group. For screening without barcode, the
                         barcode column can be the same with guide.
-  -o OUTPREFIX, --outprefix OUTPREFIX
+  -o, --outprefix OUTPREFIX
                         Output file prefix, can be the file directory path
                         with file name prefix. The directory in the outprefix
                         should be built before analysis.
-  --normalization  {total,median,upper_quartile,median_ratio,none}
+  --normalization {total,median,upper_quartile,median_ratio,none}
                         Normalization of raw count data, default is total.
                         Support method: total (Total sum normalization);
                         median (Median normalization); upper_quartile (Upper
@@ -81,7 +77,7 @@ optional arguments:
                         The iteration to generate null distribution in
                         calculating the p value of genes. The larger the
                         better, but slower in calculation, default to be 100.
-  --seed SEED            Random seed for the null-distribution permutations.
+  --seed SEED           Random seed for the null-distribution permutations.
                         Default 0 (fixed) for reproducible output; use -1 for
                         nondeterministic output.
   --plot                Output figures.
