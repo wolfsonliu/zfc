@@ -202,9 +202,8 @@ def gini(arr: np.ndarray) -> float:
     '''
     Using R library ineq, Gini function
     '''
-    sorted_arr = arr.copy()
-    sorted_arr.sort()
+    sorted_arr = np.sort(arr)
     n = arr.size
-    G = sum(sorted_arr * (np.arange(n) + 1))
+    G = np.dot(sorted_arr, np.arange(n) + 1)
     G = 2 * G / sorted_arr.sum() - (n + 1.)
-    return G/n
+    return G / n

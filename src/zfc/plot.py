@@ -97,12 +97,12 @@ def lorenz_curve(data):
     return fig
 
 
-def counts_boxplot(inputdata, sgresult):
+def counts_boxplot(inputdata, barresult):
     fig, axes = plt.subplots(1, 1)
     box = axes.boxplot(
         [
             inputdata['ctrl'], inputdata['exp'],
-            sgresult['ctrl'], sgresult['exp']
+            barresult['ctrl'], barresult['exp']
         ],
         patch_artist=True,
         sym='.'
@@ -163,7 +163,7 @@ def normcount_scatter(data):
     return fig
 
 
-def lfc_normcount_scatter(data):
+def _lfc_scatter(data, value_col, ylabel):
     fig, axes = plt.subplots(
         2, 4,
         gridspec_kw={'width_ratios': [3, 1, 3, 1], 'height_ratios': [1, 3]},
@@ -171,14 +171,14 @@ def lfc_normcount_scatter(data):
         sharey='row',
         figsize=(12.8, 6.4)
     )
-    axes[1, 0].scatter(data['ctrl'], data['lfc'], color=BLUE, alpha=0.15, edgecolor='none')
+    axes[1, 0].scatter(data['ctrl'], data[value_col], color=BLUE, alpha=0.15, edgecolor='none')
     axes[1, 0].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
     axes[1, 0].set_xlabel('Normalized counts of ctrl')
-    axes[1, 0].set_ylabel('$log_{2}$ fold change')
+    axes[1, 0].set_ylabel(ylabel)
     axes[0, 0].hist(data['ctrl'], bins=100, color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6)
     axes[0, 0].set_ylabel('Counts')
     axes[1, 1].hist(
-        data['lfc'], bins=100,
+        data[value_col], bins=100,
         color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6,
         orientation='horizontal'
     )
@@ -186,14 +186,14 @@ def lfc_normcount_scatter(data):
     axes[1, 1].set_xlabel('Counts')
     axes[0, 1].set_visible(False)
 
-    axes[1, 2].scatter(data['exp'], data['lfc'], color=BLUE, alpha=0.15, edgecolor='none')
+    axes[1, 2].scatter(data['exp'], data[value_col], color=BLUE, alpha=0.15, edgecolor='none')
     axes[1, 2].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
     axes[1, 2].set_xlabel('Normalized counts of exp')
-    axes[1, 2].set_ylabel('$log_{2}$ fold change')
+    axes[1, 2].set_ylabel(ylabel)
     axes[0, 2].hist(data['exp'], bins=100, color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6)
     axes[0, 2].set_ylabel('Counts')
     axes[1, 3].hist(
-        data['lfc'], bins=100,
+        data[value_col], bins=100,
         color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6,
         orientation='horizontal'
     )
@@ -205,50 +205,14 @@ def lfc_normcount_scatter(data):
                axes[1, 2], axes[0, 2], axes[1, 3]):
         _style_ax(ax)
     return fig
+
+
+def lfc_normcount_scatter(data):
+    return _lfc_scatter(data, 'lfc', '$log_{2}$ fold change')
 
 
 def zlfc_normcount_scatter(data):
-    fig, axes = plt.subplots(
-        2, 4,
-        gridspec_kw={'width_ratios': [3, 1, 3, 1], 'height_ratios': [1, 3]},
-        sharex='col',
-        sharey='row',
-        figsize=(12.8, 6.4)
-    )
-    axes[1, 0].scatter(data['ctrl'], data['zlfc'], color=BLUE, alpha=0.15, edgecolor='none')
-    axes[1, 0].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
-    axes[1, 0].set_xlabel('Normalized counts of ctrl')
-    axes[1, 0].set_ylabel('Z score of $log_{2}$ fold change')
-    axes[0, 0].hist(data['ctrl'], bins=100, color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6)
-    axes[0, 0].set_ylabel('Counts')
-    axes[1, 1].hist(
-        data['zlfc'], bins=100,
-        color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6,
-        orientation='horizontal'
-    )
-    axes[1, 1].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
-    axes[1, 1].set_xlabel('Counts')
-    axes[0, 1].set_visible(False)
-
-    axes[1, 2].scatter(data['exp'], data['zlfc'], color=BLUE, alpha=0.15, edgecolor='none')
-    axes[1, 2].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
-    axes[1, 2].set_xlabel('Normalized counts of exp')
-    axes[1, 2].set_ylabel('Z score of $log_{2}$ fold change')
-    axes[0, 2].hist(data['exp'], bins=100, color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6)
-    axes[0, 2].set_ylabel('Counts')
-    axes[1, 3].hist(
-        data['zlfc'], bins=100,
-        color=BLUE_LIGHT, edgecolor=BLUE, linewidth=0.6,
-        orientation='horizontal'
-    )
-    axes[1, 3].axhline(0, color=ACCENT, linestyle='dotted', linewidth=1.5)
-    axes[1, 3].set_xlabel('Counts')
-    axes[0, 3].set_visible(False)
-
-    for ax in (axes[1, 0], axes[0, 0], axes[1, 1],
-               axes[1, 2], axes[0, 2], axes[1, 3]):
-        _style_ax(ax)
-    return fig
+    return _lfc_scatter(data, 'zlfc', 'Z score of $log_{2}$ fold change')
 
 
 def lfcstd_lfc_scatter(data):
