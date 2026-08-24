@@ -85,3 +85,20 @@ def test_load_library_no_header_first_line_is_data(tmp_path):
     path.write_text("GeneX\t{}\n".format(GUIDE_A))
     entries, index = _load_library(str(path), "guide")
     assert entries == [("GeneX", GUIDE_A)]
+
+
+def test_load_library_duplicate_guide_first_wins(tmp_path):
+    path = tmp_path / "lib.txt"
+    path.write_text("gene\tguide\nGeneX\t{0}\nGeneY\t{0}\n".format(GUIDE_A))
+    entries, index = _load_library(str(path), "guide")
+    assert entries == [("GeneX", GUIDE_A), ("GeneY", GUIDE_A)]
+    assert index == {GUIDE_A: "GeneX"}
+
+
+def test_load_library_reads_gzip(tmp_path):
+    path = tmp_path / "lib.txt.gz"
+    with gzip.open(path, "wt") as handle:
+        handle.write("gene\tguide\nGeneX\t{}\n".format(GUIDE_A))
+    entries, index = _load_library(str(path), "guide")
+    assert entries == [("GeneX", GUIDE_A)]
+    assert index == {GUIDE_A: "GeneX"}

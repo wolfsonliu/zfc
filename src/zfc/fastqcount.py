@@ -42,31 +42,31 @@ def _load_library(path: str, mode: str):
     ``gene``). ``index`` maps a guide (guide mode) or a (guide, barcode)
     (barcode mode) to a gene; the first occurrence wins on duplicates.
     """
+    if mode not in ("guide", "barcode"):
+        raise ValueError("unknown mode: {!r}".format(mode))
     entries = []
     index = {}
-    with open(path) as handle:
-        lines = [line.rstrip("\r\n") for line in handle]
-    if not lines:
-        return entries, index
-    first_col = lines[0].split("\t", 1)[0]
-    data = lines if first_col != "gene" else lines[1:]
-    for lineno, line in enumerate(data, 1):
-        if not line:
-            continue
-        cols = line.split("\t")
-        if mode == "guide":
-            if len(cols) < 2:
-                raise ValueError(
-                    "library line {}: expected 'gene<tab>guide'".format(lineno)
-                )
-            key = (cols[0], cols[1])
-            index.setdefault(cols[1], cols[0])
-        else:
-            if len(cols) < 3:
-                raise ValueError(
-                    "library line {}: expected 'gene<tab>guide<tab>barcode'".format(lineno)
-                )
-            key = (cols[0], cols[1], cols[2])
-            index.setdefault((cols[1], cols[2]), cols[0])
-        entries.append(key)
+    with _open_text(path) as handle:
+        for lineno, line in enumerate(handle, 1):
+            line = line.rstrip("\r\n")
+            if lineno == 1 and line.split("\t", 1)[0] == "gene":
+                continue
+            if not line:
+                continue
+            cols = line.split("\t")
+            if mode == "guide":
+                if len(cols) < 2:
+                    raise ValueError(
+                        "library line {}: expected 'gene<tab>guide'".format(lineno)
+                    )
+                key = (cols[0], cols[1])
+                index.setdefault(cols[1], cols[0])
+            else:
+                if len(cols) < 3:
+                    raise ValueError(
+                        "library line {}: expected 'gene<tab>guide<tab>barcode'".format(lineno)
+                    )
+                key = (cols[0], cols[1], cols[2])
+                index.setdefault((cols[1], cols[2]), cols[0])
+            entries.append(key)
     return entries, index
