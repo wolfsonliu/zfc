@@ -247,3 +247,83 @@ def _write_output(counts, entries, mode, output):
     finally:
         if close:
             handle.close()
+
+
+def _require_groups(pattern, name, minimum):
+    compiled = re.compile(pattern)
+    if compiled.groups < minimum:
+        raise ValueError(
+            "{} must define at least {} capture group(s): {!r}".format(
+                name, minimum, pattern
+            )
+        )
+    return compiled
+
+
+def _build_patterns(args):
+    if args.mode == "guide":
+        _require_groups(args.guide_pattern, "guide pattern", 1)
+        return {"guide": args.guide_pattern}
+    _require_groups(args.anchor_pattern, "anchor pattern", 1)
+    _require_groups(args.barcode_pattern, "barcode pattern", 1)
+    return {"anchor": args.anchor_pattern, "barcode": args.barcode_pattern}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="zfc-count",
+        description="Count sgRNAs (and optional iBAR barcodes) from paired-end FASTQ files.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["guide", "barcode"],
+        default="guide",
+        help="Counting mode: guide (sgRNA only) or barcode (sgRNA + iBAR).",
+    )
+    parser.add_argument("-1", "--read1", required=True, help="Forward/read1 FASTQ file.")
+    parser.add_argument("-2", "--read2", required=True, help="Reverse/read2 FASTQ file.")
+    parser.add_argument(
+        "-l", "--library",
+        help="Library file (gene<tab>guide, or gene<tab>guide<tab>barcode). "
+             "First line may be a header. Omit for raw counts without gene mapping.",
+    )
+    parser.add_argument("-p", "--guide-pattern", default=DEFAULT_GUIDE, help="sgRNA regex pattern.")
+    parser.add_argument("-a", "--anchor-pattern", default=DEFAULT_ANCHOR, help="Full sgRNA+barcode regex pattern.")
+    parser.add_argument("-b", "--barcode-pattern", default=DEFAULT_BARCODE, help="Barcode regex pattern.")
+    parser.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout.")
+    parser.add_argument("--workers", type=int, default=0, help="Worker processes; 0 = auto, 1 = serial.")
+    parser.add_argument("--chunk-size", type=int, default=50000, help="Read pairs per worker batch.")
+    parser.add_argument("--quiet", action="store_true", help="Suppress the stderr summary line.")
+    args = parser.parse_args(argv)
+
+    for path in (args.read1, args.read2):
+        if not os.path.isfile(path):
+            parser.error("file not found: {}".format(path))
+    if args.library is not None and not os.path.isfile(args.library):
+        parser.error("file not found: {}".format(args.library))
+
+    try:
+        pattern_strings = _build_patterns(args)
+    except (re.error, ValueError) as exc:
+        parser.error(str(exc))
+
+    entries = None
+    library = None
+    if args.library is not None:
+        try:
+            entries, library = _load_library(args.library, args.mode)
+        except ValueError as exc:
+            parser.error(str(exc))
+
+    workers = args.workers if args.workers > 0 else min(os.cpu_count() or 1, 8)
+    counts, pairs = _count(
+        args.mode, pattern_strings, library,
+        args.read1, args.read2, workers, args.chunk_size,
+    )
+    if not args.quiet:
+        print("zfc-count: processed {} read pairs".format(pairs), file=sys.stderr)
+    _write_output(counts, entries, args.mode, args.output)
+
+
+if __name__ == "__main__":
+    main()

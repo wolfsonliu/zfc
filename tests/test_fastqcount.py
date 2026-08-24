@@ -13,6 +13,7 @@ from zfc.fastqcount import (
     _match_guide,
     _open_text,
     _write_output,
+    main,
     reverse_complement,
 )
 
@@ -265,3 +266,35 @@ def test_write_output_stdout_branch(capsys):
     _write_output(Counter({GUIDE_A: 1}), None, "guide", "-")
     captured = capsys.readouterr()
     assert captured.out == "guide\tcount\n{0}\t1\n".format(GUIDE_A)
+
+
+def test_cli_help_exits_zero():
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--help"])
+    assert exc_info.value.code == 0
+
+
+def test_cli_missing_read_errors(tmp_path):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["-1", str(tmp_path / "nope.fastq"), "-2", str(tmp_path / "nope2.fastq")])
+    assert exc_info.value.code == 2
+
+
+def test_cli_invalid_pattern_errors(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA"])
+    _write_fastq(r2, ["TTT"])
+    with pytest.raises(SystemExit) as exc_info:
+        main(["-1", str(r1), "-2", str(r2), "-p", "ACCGTTT"])
+    assert exc_info.value.code == 2
+
+
+def test_cli_end_to_end_guide_raw(tmp_path, capsys):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, [_guide_seq(GUIDE_A), _guide_seq(GUIDE_A)])
+    _write_fastq(r2, ["T" * 20, "T" * 20])
+    main(["-1", str(r1), "-2", str(r2), "--workers", "1", "--quiet"])
+    captured = capsys.readouterr()
+    assert captured.out == "guide\tcount\n{0}\t2\n".format(GUIDE_A)
