@@ -11,10 +11,6 @@ and run the project, plus dependency/versioning/style conventions.
   - When: first checkout, and after any dependency change.
   - Expires: if the packaging tool is replaced.
 
-The two bash counting scripts (`bin/library_count_sgrna`,
-`bin/library_count_sgrna_with_barcode`) are repo-only tools; run them as
-`./bin/...` — they are not installed onto PATH.
-
 ## Lint
 
 - `uvx ruff check` — lint.
@@ -42,8 +38,8 @@ alongside new or changed behavior; the contracts to lock are in
 ## Run the CLI
 
 - `uv run zfc --help` (installed entry point).
-- `uv run zfc-count --help` for FASTQ counting (replaces the deprecated
-  `bin/library_count_sgrna*` bash scripts); see `docs/data-format.md` for I/O.
+- `uv run zfc-count --help` for FASTQ counting; see `docs/data-format.md` for
+  I/O.
 
 ## Adding dependencies
 
@@ -57,7 +53,7 @@ alongside new or changed behavior; the contracts to lock are in
 
 ## Versioning
 
-Bump `src/zfc/__init__.py::__version__` (current: `0.2.1`); hatchling reads it for
+Bump `src/zfc/__init__.py::__version__` (current: `0.2.2`); hatchling reads it for
 packaging and `zfc --version` reads it at runtime.
   - Why: version is single-sourced from one place.
   - When: every release.

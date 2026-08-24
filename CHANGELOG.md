@@ -4,6 +4,33 @@ All notable changes to this project are documented in this file. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-08-24
+
+### Added
+- `zfc-count` console script (`src/zfc/fastqcount.py`): counts sgRNAs (and
+  iBAR barcodes) from paired-end or single-end FASTQ — plain or gzip — in
+  `guide`/`barcode` modes, with optional `-l` library mapping to
+  `gene<TAB>guide<TAB>barcode<TAB>count`, multi-process parallelism, and a
+  throughput benchmark script (`scripts/bench_fastqcount.py`).
+- CI workflow (`.github/workflows/ci.yml`): ruff + pytest on Python 3.11–3.13.
+
+### Changed
+- Hardened the fold-change pipeline (output-preserving): split `zfoldchange`
+  into step helpers, added type annotations, vectorized the Gini coefficient,
+  deduplicated plot scatter builders, and locked result tables with a
+  golden-parity regression test (`tests/test_parity.py`).
+- `zfc` CLI: `--input` is now required.
+
+### Fixed
+- Raise `ValueError` for missing zfoldchange input columns instead of failing
+  unpredictably.
+
+### Removed
+- Deleted the two legacy repo bash counting scripts
+  (`bin/library_count_sgrna`, `bin/library_count_sgrna_with_barcode`); their
+  functionality is fully superseded by the `zfc-count` console script
+  (`src/zfc/fastqcount.py`).
+
 ## [0.2.1] - 2026-08-22
 
 ### Added

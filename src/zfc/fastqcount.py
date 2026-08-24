@@ -2,9 +2,9 @@
 
 With two read files it streams them in lockstep and matches across both reads
 and their reverse complements; with a single read file (single-end) it matches
-the read and its reverse complement. Output-compatible Python replacement for
-the repo bash tools ``bin/library_count_sgrna`` and
-``bin/library_count_sgrna_with_barcode``.
+the read and its reverse complement. Emits ``gene<TAB>guide<TAB>barcode<TAB>count``
+(with a library) or raw ``guide``/``barcode`` counts (without one). This
+replaces the former repo ``bin/`` bash counting scripts.
 """
 
 from __future__ import annotations

@@ -5,8 +5,6 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 ## Top-level layout
 
 - `src/zfc/` — the importable package (all Python logic).
-- `bin/` — repo-only tools: two legacy bash counting scripts (deprecated;
-  superseded by the `zfc-count` console script in `src/zfc/fastqcount.py`).
 - `doc/` — paper assets (LaTeX, figures, bib). Not runtime; don't edit here
   when changing behavior.
 - `README.md` — user documentation (algorithm, usage, examples, citations).
@@ -33,17 +31,13 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 - `src/zfc/plot.py` — matplotlib figure builders + `zfc_plot()` which saves all
   figures. Sets the Agg backend at import.
 
-## `bin/` entry points
+## Entry points
 
-The Python CLI is the `[project.scripts]` entry point `zfc` (implemented in
-  `src/zfc/cli.py::main`), run via `uv run zfc` or the installed `zfc` command;
-  the two bash scripts below are repo-only tools.
-- `src/zfc/fastqcount.py` — the `zfc-count` console script (fast, gzip-aware
-  FASTQ counting), replacing the two bash scripts below.
-- `bin/library_count_sgrna` — bash; counts sgRNAs from paired-end FASTQ against
-  a library, emitting `gene guide barcode count`. (deprecated)
-- `bin/library_count_sgrna_with_barcode` — bash; same, but also extracts the
-  iBAR barcode from reads. (deprecated)
+- `zfc` — the `[project.scripts]` entry point (implemented in
+  `src/zfc/cli.py::main`), run via `uv run zfc` or the installed `zfc` command.
+- `zfc-count` — the `[project.scripts]` entry point (implemented in
+  `src/zfc/fastqcount.py::main`); a fast, gzip-aware FASTQ counter for sgRNA /
+  iBAR reads.
 
 ## Data flow
 
@@ -64,7 +58,7 @@ input.tsv ──read_raw_count──▶ DataFrame[gene, guide, barcode, ctrl, ex
 - The `normalization` string flows CLI → `zfoldchange` → `df_normalization`;
   keep the three in sync (see the `upper_quartile`/`quantile` note in
   `docs/algorithm.md`).
-- The bash count scripts and `read_raw_count` agree on `gene/guide/barcode`
+- `zfc-count` output and `read_raw_count` agree on `gene/guide/barcode`
   (+ `count`) naming.
 
 ## Where to add code

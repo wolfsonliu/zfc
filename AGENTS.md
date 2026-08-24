@@ -31,7 +31,7 @@ Read a doc only when its condition matches.
 - **Algorithm & statistics** — `docs/algorithm.md`
   Read before touching fold-change/stats math, null distributions, or rank aggregation.
 - **Data formats & CLI contract** — `docs/data-format.md`
-  Read before touching I/O, the `zfc` CLI, or the `bin/` counting scripts.
+  Read before touching I/O, the `zfc` CLI, or the `zfc-count` CLI (FASTQ counting).
 
 ## Hard Constraints (non-negotiable)
 
@@ -53,7 +53,7 @@ Read a doc only when its condition matches.
    Expires: if interactive/GUI plotting becomes a deliberate feature.
 
 4. **Version is single-sourced from `src/zfc/__init__.py::__version__`
-   (read by hatchling via `pyproject.toml`).** Current: `0.2.1`.
+   (read by hatchling via `pyproject.toml`).** Current: `0.2.2`.
    When: every release/version change · Why: `zfc --version` reads
    `__version__` and packaging reads the same value · Expires: if the version
    moves elsewhere, update `pyproject.toml` accordingly.

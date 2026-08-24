@@ -1,7 +1,7 @@
 # Data Formats & CLI Contract
 
-When to read: before touching I/O, the `zfc` CLI, the `bin/` counting scripts,
-or validation logic.
+When to read: before touching I/O, the `zfc` CLI, the `zfc-count` CLI, or
+validation logic.
 
 ## Input count table (`zfc`)
 
@@ -52,9 +52,9 @@ saved as `.png` and `.pdf`. See `src/zfc/plot.py::zfc_plot`.
 
 ## FASTQ counting (`zfc-count`)
 
-The legacy bash tools `bin/library_count_sgrna` and
-`bin/library_count_sgrna_with_barcode` are deprecated in favor of the Python
-`zfc-count` CLI (module `src/zfc/fastqcount.py`):
+FASTQ reads are counted with the Python `zfc-count` CLI (module
+`src/zfc/fastqcount.py`) — the replacement for the former `bin/` bash counting
+scripts:
 
 ```
 zfc-count --mode {guide,barcode} -1 R1.fastq[.gz] [-2 R2.fastq[.gz]] [-l library.txt]
