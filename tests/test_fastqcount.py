@@ -1,8 +1,8 @@
 import gzip
-import re  # noqa: F401
-from collections import Counter  # noqa: F401
+import re
+from collections import Counter
 
-import pytest  # noqa: F401
+import pytest
 
 from zfc.fastqcount import (
     _open_text,

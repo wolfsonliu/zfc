@@ -6,13 +6,13 @@ Output-compatible Python replacement for the repo bash tools
 
 from __future__ import annotations
 
-import argparse  # noqa: F401
+import argparse
 import gzip
-import multiprocessing as mp  # noqa: F401
-import os  # noqa: F401
-import re  # noqa: F401
-import sys  # noqa: F401
-from collections import Counter  # noqa: F401
+import multiprocessing as mp
+import os
+import re
+import sys
+from collections import Counter
 
 COMPLEMENT = str.maketrans("ATGC", "TACG")
 
