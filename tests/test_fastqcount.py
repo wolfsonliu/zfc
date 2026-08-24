@@ -8,6 +8,8 @@ from zfc.fastqcount import (
     _iter_batches,
     _iter_paired_records,
     _load_library,
+    _match_barcode_pair,
+    _match_guide,
     _open_text,
     reverse_complement,
 )
@@ -163,3 +165,26 @@ def test_iter_batches_reads_gzip(tmp_path):
     _write_gzip_fastq(r2, ["TTT", "GGG"])
     batches = list(_iter_batches(str(r1), str(r2), 2))
     assert batches == [[("AAA", "TTT"), ("CCC", "GGG")]]
+
+
+def test_match_guide_basic():
+    pattern = re.compile(GUIDE_PATTERN)
+    assert _match_guide(_guide_seq(GUIDE_A), "T" * 20, pattern) == GUIDE_A
+
+
+def test_match_guide_via_reverse_complement():
+    pattern = re.compile(GUIDE_PATTERN)
+    forward = _guide_seq(GUIDE_A)
+    seq1 = reverse_complement(forward)
+    assert _match_guide(seq1, "T" * 20, pattern) == GUIDE_A
+
+
+def test_match_barcode_pair_anchor_on_read1():
+    anchor = re.compile(ANCHOR_PATTERN)
+    barcode_pattern = re.compile(BARCODE_PATTERN)
+    seq1 = _anchor_seq(GUIDE_A, BARCODE_G)
+    mate_struct = reverse_complement("TGGA" + BARCODE_G + "AACA")
+    seq2 = "NN" + mate_struct + "NN"
+    assert _match_barcode_pair(seq1, seq2, anchor, barcode_pattern) == (
+        GUIDE_A, BARCODE_G, BARCODE_G
+    )

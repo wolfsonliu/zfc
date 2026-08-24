@@ -101,3 +101,37 @@ def _iter_batches(read1: str, read2: str, chunk_size: int):
                 batch = []
         if batch:
             yield batch
+
+
+def _match_guide(seq1, seq2, pattern):
+    """Return the first guide captured across R1, R2, RC(R1), RC(R2)."""
+    for seq in (seq1, seq2, reverse_complement(seq1), reverse_complement(seq2)):
+        match = pattern.search(seq)
+        if match:
+            return match.group(1)
+    return None
+
+
+def _match_barcode_pair(seq1, seq2, anchor, barcode_pattern):
+    """Return ``(guide, barcode1, barcode2)`` or None for a read pair.
+
+    ``barcode1`` is captured by the anchor on the same read as the guide;
+    ``barcode2`` is captured from the mate read by the barcode pattern.
+    Candidates are tried in order: (R1, RC(R2)), (RC(R1), R2),
+    (R2, RC(R1)), (RC(R2), R1).
+    """
+    candidates = (
+        (seq1, reverse_complement(seq2)),
+        (reverse_complement(seq1), seq2),
+        (seq2, reverse_complement(seq1)),
+        (reverse_complement(seq2), seq1),
+    )
+    for anchor_read, mate_read in candidates:
+        match = anchor.search(anchor_read)
+        if match:
+            guide = match.group(1)
+            barcode1 = match.group(2) if (match.lastindex or 0) >= 2 else None
+            mate_match = barcode_pattern.search(mate_read)
+            barcode2 = mate_match.group(1) if mate_match else None
+            return guide, barcode1, barcode2
+    return None
