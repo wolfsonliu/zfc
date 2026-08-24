@@ -40,7 +40,7 @@ bash + awk 管道实现：每个 read pair 要经过 `cat`×2、`rev|tr`（整�
 ### CLI
 
 ```
-zfc-count --mode {guide,barcode} -1/--read1 FILE -2/--read2 FILE \
+zfc-count --mode {guide,barcode} -1/--read1 FILE [-2/--read2 FILE] \
   [-l/--library FILE] \
   [-p/--guide-pattern REGEX] [-a/--anchor-pattern REGEX] \
   [-b/--barcode-pattern REGEX] \
@@ -59,7 +59,8 @@ zfc-count --mode {guide,barcode} -1/--read1 FILE -2/--read2 FILE \
   - `-p` sgRNA `ACCG([ATGC]{20})GTTT`
   - `-b` barcode `TGGA([ATCG]{6})AACA`
 - `-1/-2/-l` 支持 `.gz`（按魔数识别）；输出恒为文本，默认 stdout。
-- `-1/-2` 为必填（缺则报错退出），`-l` 为可选（见下）。
+- `-1` 必填（缺则报错退出）；`-2` 可选——省略 `-2` 即单端模式（只匹配该 read
+  及其反向互补）；`-l` 为可选（见下）。
 - `--workers` 默认 = `min(os.cpu_count() or 1, 8)`；`--workers 1` 用于串行/
   确定性调试。
 
@@ -95,6 +96,9 @@ library 文件格式（沿用原脚本，见 `docs/data-format.md`）：
   找 barcode 得到 `B2`；取库中存在的 `(G, B)`，优先 `B1` 再 `B2`；都不在库
   （zfc-ready）则跳过。每个 pair 计 1 次。raw 模式累积所有提取到的
   `(guide, barcode)`。
+- **单端模式**（省略 `-2`）：候选位置只有 `R1, RC(R1)` 两处；barcode 由
+  anchor 捕获组 2 在同一条 read 内取得（无对端 `B2`），因此单端 barcode 模式
+  要求 read 覆盖 `guide…spacer…barcode` 全长。其余计数/映射语义与双端一致。
 - **计数与映射（zfc-ready）**：worker 内用广播的 library 做反向映射
   （`guide→gene` 或 `(guide,barcode)→gene`），只累积库内键；主进程合并各部
   分计数，最后输出所有 library 行（未见到的 key 计 0）。

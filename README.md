@@ -40,11 +40,12 @@ to create virual environment for the ZFC software.
 ## Count reads from FASTQ (zfc-count) ##
 
 `zfc-count` (replacing the legacy `bin/library_count_sgrna[,_with_barcode]`
-bash scripts) streams paired-end FASTQ — plain or gzip — and emits the count
-table that `zfc` consumes:
+bash scripts) streams paired-end or single-end FASTQ — plain or gzip — and
+emits the count table that `zfc` consumes:
 
 ```{shell}
 $ zfc-count --mode barcode -1 R1.fastq.gz -2 R2.fastq.gz -l library.txt -o counts.tsv
+$ zfc-count --mode guide -1 reads.fastq.gz -o sgrna_counts.tsv   # single-end
 ```
 
 Omit `-l` to emit raw `guide`/`barcode` counts without gene mapping. See

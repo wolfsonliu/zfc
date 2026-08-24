@@ -57,8 +57,14 @@ The legacy bash tools `bin/library_count_sgrna` and
 `zfc-count` CLI (module `src/zfc/fastqcount.py`):
 
 ```
-zfc-count --mode {guide,barcode} -1 R1.fastq[.gz] -2 R2.fastq[.gz] [-l library.txt]
+zfc-count --mode {guide,barcode} -1 R1.fastq[.gz] [-2 R2.fastq[.gz]] [-l library.txt]
 ```
+
+- `-2` is optional; omit it to count single-end data. Paired input is matched
+  across both reads and their reverse complements; single-end input is matched
+  across the read and its reverse complement. In barcode mode with single-end
+  data the barcode comes from the anchor within the same read, so reads must
+  span `guide…spacer…barcode`.
 
 - Without `-l` → raw counts: `guide<TAB>count` (guide mode) or
   `guide<TAB>barcode<TAB>count` (barcode mode); not directly consumable by

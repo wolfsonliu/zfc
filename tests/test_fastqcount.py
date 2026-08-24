@@ -8,6 +8,7 @@ from zfc.fastqcount import (
     _count,
     _iter_batches,
     _iter_paired_records,
+    _iter_single_records,
     _load_library,
     _match_barcode_pair,
     _match_guide,
@@ -381,3 +382,45 @@ def test_count_parallel_matches_serial(tmp_path):
     )
     assert serial_pairs == parallel_pairs == 3
     assert parallel == serial == Counter({GUIDE_A: 2, GUIDE_C: 1})
+
+
+def test_iter_single_records_yields_sequences(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    _write_fastq(r1, ["AAA", "CCC"])
+    with open(str(r1)) as handle:
+        assert list(_iter_single_records(handle)) == ["AAA", "CCC"]
+
+
+def test_iter_batches_single_end(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    _write_fastq(r1, ["AAA", "CCC", "GGG"])
+    batches = list(_iter_batches(str(r1), None, 2))
+    assert [len(batch) for batch in batches] == [2, 1]
+    assert batches == [[("AAA", ""), ("CCC", "")], [("GGG", "")]]
+
+
+def test_count_guide_single_end_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    forward = _guide_seq(GUIDE_A)
+    inverted = reverse_complement(_guide_seq(GUIDE_C))
+    _write_fastq(r1, [forward, forward, inverted])
+    counts, pairs = _count("guide", {"guide": GUIDE_PATTERN}, None, str(r1), None, 1, 10)
+    assert pairs == 3
+    assert counts == Counter({GUIDE_A: 2, GUIDE_C: 1})
+
+
+def test_count_barcode_single_end_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    _write_fastq(r1, [_anchor_seq(GUIDE_A, BARCODE_G), _anchor_seq(GUIDE_A, BARCODE_G)])
+    patterns = {"anchor": ANCHOR_PATTERN, "barcode": BARCODE_PATTERN}
+    counts, pairs = _count("barcode", patterns, None, str(r1), None, 1, 10)
+    assert pairs == 2
+    assert counts == Counter({(GUIDE_A, BARCODE_G): 2})
+
+
+def test_cli_single_end_guide_raw(tmp_path, capsys):
+    r1 = tmp_path / "r1.fastq"
+    _write_fastq(r1, [_guide_seq(GUIDE_A), _guide_seq(GUIDE_A)])
+    main(["-1", str(r1), "--workers", "1", "--quiet"])
+    captured = capsys.readouterr()
+    assert captured.out == "guide\tcount\n{0}\t2\n".format(GUIDE_A)

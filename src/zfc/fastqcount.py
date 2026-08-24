@@ -1,7 +1,10 @@
-"""Count sgRNAs (and iBAR barcodes) from paired-end FASTQ files.
+"""Count sgRNAs (and iBAR barcodes) from paired-end or single-end FASTQ files.
 
-Output-compatible Python replacement for the repo bash tools
-``bin/library_count_sgrna`` and ``bin/library_count_sgrna_with_barcode``.
+With two read files it streams them in lockstep and matches across both reads
+and their reverse complements; with a single read file (single-end) it matches
+the read and its reverse complement. Output-compatible Python replacement for
+the repo bash tools ``bin/library_count_sgrna`` and
+``bin/library_count_sgrna_with_barcode``.
 """
 
 from __future__ import annotations
@@ -88,19 +91,45 @@ def _iter_paired_records(handle1, handle2):
         yield rec1[1].rstrip("\r\n"), rec2[1].rstrip("\r\n")
 
 
-def _iter_batches(read1: str, read2: str, chunk_size: int):
+def _iter_single_records(handle):
+    """Yield each read sequence from a single-end FASTQ file."""
+    while True:
+        name = handle.readline()
+        if not name:
+            return
+        rec = [name, handle.readline(), handle.readline(), handle.readline()]
+        if any(line == "" for line in rec):
+            raise ValueError("truncated FASTQ record")
+        yield rec[1].rstrip("\r\n")
+
+
+def _group_batches(pairs, chunk_size):
     """Yield lists of at most ``chunk_size`` (seq1, seq2) tuples."""
+    batch = []
+    for pair in pairs:
+        batch.append(pair)
+        if len(batch) >= chunk_size:
+            yield batch
+            batch = []
+    if batch:
+        yield batch
+
+
+def _iter_batches(read1, read2, chunk_size):
+    """Yield batches of ``(seq1, seq2)`` tuples for paired or single-end input.
+
+    With ``read2=None`` (single-end), ``seq2`` is the empty string so that the
+    shared matching/worker logic tries only the read and its reverse complement.
+    """
     if chunk_size < 1:
         raise ValueError("chunk_size must be >= 1")
+    if read2 is None:
+        with _open_text(read1) as handle:
+            singles = ((seq, "") for seq in _iter_single_records(handle))
+            yield from _group_batches(singles, chunk_size)
+        return
     with _open_text(read1) as handle1, _open_text(read2) as handle2:
-        batch = []
-        for seq1, seq2 in _iter_paired_records(handle1, handle2):
-            batch.append((seq1, seq2))
-            if len(batch) >= chunk_size:
-                yield batch
-                batch = []
-        if batch:
-            yield batch
+        yield from _group_batches(_iter_paired_records(handle1, handle2), chunk_size)
 
 
 def _match_guide(seq1, seq2, pattern):
@@ -186,7 +215,10 @@ def _process_batch(batch):
 
 
 def _count(mode, pattern_strings, library, read1, read2, workers, chunk_size):
-    """Merge partial counts from serial or pooled batch processing."""
+    """Merge partial counts from serial or pooled batch processing.
+
+    ``read2`` may be ``None`` for single-end input.
+    """
     total = Counter()
     pairs = 0
     if workers <= 1:
@@ -272,7 +304,7 @@ def _build_patterns(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="zfc-count",
-        description="Count sgRNAs (and optional iBAR barcodes) from paired-end FASTQ files.",
+        description="Count sgRNAs (and optional iBAR barcodes) from paired-end or single-end FASTQ files.",
     )
     parser.add_argument(
         "--mode",
@@ -281,13 +313,13 @@ def main(argv=None):
         help="Counting mode: guide (sgRNA only) or barcode (sgRNA + iBAR).",
     )
     parser.add_argument("-1", "--read1", required=True, help="Forward/read1 FASTQ file.")
-    parser.add_argument("-2", "--read2", required=True, help="Reverse/read2 FASTQ file.")
+    parser.add_argument("-2", "--read2", help="Reverse/read2 FASTQ file (omit for single-end).")
     parser.add_argument(
         "-l", "--library",
         help="Library file (gene<tab>guide, or gene<tab>guide<tab>barcode). "
              "First line may be a header. Omit for raw counts without gene mapping.",
     )
-    parser.add_argument("-g", "--guide-pattern", default=DEFAULT_GUIDE, help="sgRNA regex pattern.")
+    parser.add_argument("-p", "--guide-pattern", default=DEFAULT_GUIDE, help="sgRNA regex pattern.")
     parser.add_argument("-a", "--anchor-pattern", default=DEFAULT_ANCHOR, help="Full sgRNA+barcode regex pattern.")
     parser.add_argument("-b", "--barcode-pattern", default=DEFAULT_BARCODE, help="Barcode regex pattern.")
     parser.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout.")
@@ -296,7 +328,8 @@ def main(argv=None):
     parser.add_argument("--quiet", action="store_true", help="Suppress the stderr summary line.")
     args = parser.parse_args(argv)
 
-    for path in (args.read1, args.read2):
+    read_paths = [args.read1] + ([args.read2] if args.read2 is not None else [])
+    for path in read_paths:
         if not os.path.isfile(path):
             parser.error("file not found: {}".format(path))
     if args.library is not None and not os.path.isfile(args.library):
@@ -329,7 +362,10 @@ def main(argv=None):
     except (ValueError, OSError, EOFError) as exc:
         parser.error(str(exc))
     if not args.quiet:
-        print("zfc-count: processed {} read pairs".format(pairs), file=sys.stderr)
+        unit = "read" if args.read2 is None else "read pair"
+        if pairs != 1:
+            unit += "s"
+        print("zfc-count: processed {} {}".format(pairs, unit), file=sys.stderr)
     _write_output(counts, entries, args.mode, args.output)
 
 
