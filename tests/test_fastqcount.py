@@ -245,3 +245,23 @@ def test_write_output_barcode_raw(tmp_path):
     assert out.read_text() == (
         "guide\tbarcode\tcount\n{0}\t{1}\t3\n".format(GUIDE_A, BARCODE_G)
     )
+
+
+def test_write_output_barcode_zfc_ready_zero_fill(tmp_path):
+    out = tmp_path / "out.tsv"
+    other = "T" * 6
+    entries = [("GeneX", GUIDE_A, BARCODE_G), ("GeneY", GUIDE_A, other)]
+    counts = Counter({("GeneX", GUIDE_A, BARCODE_G): 7})
+    _write_output(counts, entries, "barcode", str(out))
+    expected = (
+        "gene\tguide\tbarcode\tcount\n"
+        "GeneX\t{0}\t{1}\t7\n"
+        "GeneY\t{0}\t{2}\t0\n"
+    ).format(GUIDE_A, BARCODE_G, other)
+    assert out.read_text() == expected
+
+
+def test_write_output_stdout_branch(capsys):
+    _write_output(Counter({GUIDE_A: 1}), None, "guide", "-")
+    captured = capsys.readouterr()
+    assert captured.out == "guide\tcount\n{0}\t1\n".format(GUIDE_A)
