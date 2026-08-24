@@ -302,6 +302,9 @@ def main(argv=None):
     if args.library is not None and not os.path.isfile(args.library):
         parser.error("file not found: {}".format(args.library))
 
+    if args.chunk_size < 1:
+        parser.error("--chunk-size must be >= 1")
+
     try:
         pattern_strings = _build_patterns(args)
     except (re.error, ValueError) as exc:

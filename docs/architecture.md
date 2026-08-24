@@ -5,7 +5,8 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 ## Top-level layout
 
 - `src/zfc/` — the importable package (all Python logic).
-- `bin/` — three executable entry points (one Python CLI, two bash scripts).
+- `bin/` — repo-only tools: two legacy bash counting scripts (deprecated;
+  superseded by the `zfc-count` console script in `src/zfc/fastqcount.py`).
 - `doc/` — paper assets (LaTeX, figures, bib). Not runtime; don't edit here
   when changing behavior.
 - `README.md` — user documentation (algorithm, usage, examples, citations).
@@ -37,10 +38,12 @@ When to read: navigating the repo, adding a module, or tracing data flow.
 The Python CLI is the `[project.scripts]` entry point `zfc` (implemented in
   `src/zfc/cli.py::main`), run via `uv run zfc` or the installed `zfc` command;
   the two bash scripts below are repo-only tools.
+- `src/zfc/fastqcount.py` — the `zfc-count` console script (fast, gzip-aware
+  FASTQ counting), replacing the two bash scripts below.
 - `bin/library_count_sgrna` — bash; counts sgRNAs from paired-end FASTQ against
-  a library, emitting `gene guide barcode count`.
+  a library, emitting `gene guide barcode count`. (deprecated)
 - `bin/library_count_sgrna_with_barcode` — bash; same, but also extracts the
-  iBAR barcode from reads.
+  iBAR barcode from reads. (deprecated)
 
 ## Data flow
 
@@ -70,4 +73,5 @@ input.tsv ──read_raw_count──▶ DataFrame[gene, guide, barcode, ctrl, ex
 - New pipeline step → `src/zfc/zfoldchange.py`.
 - New input parsing / output format → `src/zfc/programio.py`.
 - New figure → `src/zfc/plot.py` + register it in `zfc_plot()`.
-- New top-level command → `bin/` (later registered as a `[project.scripts]` entry).
+- New top-level command → add it under `src/zfc/` and register it in
+  `[project.scripts]` (see `src/zfc/fastqcount.py` + the `zfc-count` entry).

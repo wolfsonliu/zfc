@@ -37,6 +37,19 @@ It's advised to use
 [virtualenv](https://virtualenv.pypa.io/en/stable/) or other software
 to create virual environment for the ZFC software.
 
+## Count reads from FASTQ (zfc-count) ##
+
+`zfc-count` (replacing the legacy `bin/library_count_sgrna[,_with_barcode]`
+bash scripts) streams paired-end FASTQ — plain or gzip — and emits the count
+table that `zfc` consumes:
+
+```{shell}
+$ zfc-count --mode barcode -1 R1.fastq.gz -2 R2.fastq.gz -l library.txt -o counts.tsv
+```
+
+Omit `-l` to emit raw `guide`/`barcode` counts without gene mapping. See
+`docs/data-format.md` for the full I/O contract.
+
 ## Usage ##
 
 The help of ZFC software:

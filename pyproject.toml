@@ -33,6 +33,7 @@ Issues = "https://github.com/wolfsonliu/zfc/issues"
 
 [project.scripts]
 zfc = "zfc.cli:main"
+zfc-count = "zfc.fastqcount:main"
 
 [dependency-groups]
 dev = ["pytest", "ruff"]

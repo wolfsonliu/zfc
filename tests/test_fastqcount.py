@@ -290,6 +290,44 @@ def test_cli_invalid_pattern_errors(tmp_path):
     assert exc_info.value.code == 2
 
 
+def test_cli_invalid_regex_errors(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA"])
+    _write_fastq(r2, ["TTT"])
+    with pytest.raises(SystemExit) as exc_info:
+        main(["-1", str(r1), "-2", str(r2), "-p", "ACCG([ATGC]{"])
+    assert exc_info.value.code == 2
+
+
+def test_cli_invalid_chunk_size_errors(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA"])
+    _write_fastq(r2, ["TTT"])
+    with pytest.raises(SystemExit) as exc_info:
+        main(["-1", str(r1), "-2", str(r2), "--chunk-size", "0"])
+    assert exc_info.value.code == 2
+
+
+def test_cli_end_to_end_guide_library(tmp_path, capsys):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    lib = tmp_path / "lib.txt"
+    _write_fastq(r1, [_guide_seq(GUIDE_A), _guide_seq(GUIDE_A)])
+    _write_fastq(r2, ["T" * 20, "T" * 20])
+    lib.write_text("gene\tguide\nGeneX\t{}\nGeneY\t{}\n".format(GUIDE_A, GUIDE_C))
+    main(["-1", str(r1), "-2", str(r2), "-l", str(lib),
+          "--workers", "1", "--quiet"])
+    captured = capsys.readouterr()
+    expected = (
+        "gene\tguide\tbarcode\tcount\n"
+        "GeneX\t{0}\t{0}\t2\n"
+        "GeneY\t{1}\t{1}\t0\n"
+    ).format(GUIDE_A, GUIDE_C)
+    assert captured.out == expected
+
+
 def test_cli_end_to_end_guide_raw(tmp_path, capsys):
     r1 = tmp_path / "r1.fastq"
     r2 = tmp_path / "r2.fastq"

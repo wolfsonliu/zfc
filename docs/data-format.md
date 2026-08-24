@@ -50,18 +50,28 @@ directory must exist before analysis (the CLI does not create it).
 `gene_top_hits`, `sgrna_p_hist`, `gene_p_hist`, `lfcstd_ctrlmean` — each
 saved as `.png` and `.pdf`. See `src/zfc/plot.py::zfc_plot`.
 
-## `bin/` counting scripts
+## FASTQ counting (`zfc-count`)
 
-`library_count_sgrna` / `library_count_sgrna_with_barcode` consume paired-end
-FASTQ (`-f`/`-r`), a regex pattern (`-p`, and `-a`/`-b` for the barcode
-variant), and a library file:
+The legacy bash tools `bin/library_count_sgrna` and
+`bin/library_count_sgrna_with_barcode` are deprecated in favor of the Python
+`zfc-count` CLI (module `src/zfc/fastqcount.py`):
 
-- Library (no barcode): `gene <tab> guide`.
-- Library (with barcode): `gene <tab> guide <tab> barcode`.
+```
+zfc-count --mode {guide,barcode} -1 R1.fastq[.gz] -2 R2.fastq[.gz] [-l library.txt]
+```
 
-Each emits a headered table `gene <tab> guide <tab> barcode <tab> count` on
-stdout, matching the `zfc` input shape (counts become ctrl/exp after pivoting
-samples).
+- Without `-l` → raw counts: `guide<TAB>count` (guide mode) or
+  `guide<TAB>barcode<TAB>count` (barcode mode); not directly consumable by
+  `zfc` (no `gene` column).
+- With `-l` → `gene<TAB>guide<TAB>barcode<TAB>count`, matching the `zfc`
+  input shape (counts become ctrl/exp after pivoting samples). Guide mode
+  emits `barcode == guide`.
+- Library (guide mode): `gene <tab> guide`; (barcode mode):
+  `gene <tab> guide <tab> barcode`. A header row beginning with `gene` is
+  skipped.
+- gzip input is auto-detected by magic bytes (no extension required).
+- Patterns default to the iBAR design; overridable via `-p`/`-a`/`-b`.
+  Fuller details: `docs/specs/2026-08-24-fastqcount-design.md`.
 
 ## Normalization option names
 

@@ -42,8 +42,8 @@ alongside new or changed behavior; the contracts to lock are in
 ## Run the CLI
 
 - `uv run zfc --help` (installed entry point).
-- `library_count_sgrna` and `library_count_sgrna_with_barcode` are bash scripts
-  run from the repo as `./bin/...`; see `docs/data-format.md` for their I/O.
+- `uv run zfc-count --help` for FASTQ counting (replaces the deprecated
+  `bin/library_count_sgrna*` bash scripts); see `docs/data-format.md` for I/O.
 
 ## Adding dependencies
 
