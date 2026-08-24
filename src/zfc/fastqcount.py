@@ -264,7 +264,7 @@ def _build_patterns(args):
     if args.mode == "guide":
         _require_groups(args.guide_pattern, "guide pattern", 1)
         return {"guide": args.guide_pattern}
-    _require_groups(args.anchor_pattern, "anchor pattern", 1)
+    _require_groups(args.anchor_pattern, "anchor pattern", 2)
     _require_groups(args.barcode_pattern, "barcode pattern", 1)
     return {"anchor": args.anchor_pattern, "barcode": args.barcode_pattern}
 
@@ -304,6 +304,8 @@ def main(argv=None):
 
     if args.chunk_size < 1:
         parser.error("--chunk-size must be >= 1")
+    if args.workers < 0:
+        parser.error("--workers must be >= 0")
 
     try:
         pattern_strings = _build_patterns(args)
@@ -319,10 +321,13 @@ def main(argv=None):
             parser.error(str(exc))
 
     workers = args.workers if args.workers > 0 else min(os.cpu_count() or 1, 8)
-    counts, pairs = _count(
-        args.mode, pattern_strings, library,
-        args.read1, args.read2, workers, args.chunk_size,
-    )
+    try:
+        counts, pairs = _count(
+            args.mode, pattern_strings, library,
+            args.read1, args.read2, workers, args.chunk_size,
+        )
+    except (ValueError, OSError, EOFError) as exc:
+        parser.error(str(exc))
     if not args.quiet:
         print("zfc-count: processed {} read pairs".format(pairs), file=sys.stderr)
     _write_output(counts, entries, args.mode, args.output)

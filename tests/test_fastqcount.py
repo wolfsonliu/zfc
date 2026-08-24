@@ -336,3 +336,48 @@ def test_cli_end_to_end_guide_raw(tmp_path, capsys):
     main(["-1", str(r1), "-2", str(r2), "--workers", "1", "--quiet"])
     captured = capsys.readouterr()
     assert captured.out == "guide\tcount\n{0}\t2\n".format(GUIDE_A)
+
+
+def test_count_barcode_raw_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    seq1 = _anchor_seq(GUIDE_A, BARCODE_G)
+    seq2 = "NN" + reverse_complement("TGGA" + BARCODE_G + "AACA") + "NN"
+    _write_fastq(r1, [seq1, seq1])
+    _write_fastq(r2, [seq2, seq2])
+    patterns = {"anchor": ANCHOR_PATTERN, "barcode": BARCODE_PATTERN}
+    counts, pairs = _count("barcode", patterns, None, str(r1), str(r2), 1, 10)
+    assert pairs == 2
+    assert counts == Counter({(GUIDE_A, BARCODE_G): 2})
+
+
+def test_count_barcode_zfc_ready_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    lib = tmp_path / "lib.txt"
+    seq1 = _anchor_seq(GUIDE_A, BARCODE_G)
+    seq2 = "NN" + reverse_complement("TGGA" + BARCODE_G + "AACA") + "NN"
+    _write_fastq(r1, [seq1])
+    _write_fastq(r2, [seq2])
+    lib.write_text("gene\tguide\tbarcode\nGeneX\t{0}\t{1}\n".format(GUIDE_A, BARCODE_G))
+    _entries, index = _load_library(str(lib), "barcode")
+    patterns = {"anchor": ANCHOR_PATTERN, "barcode": BARCODE_PATTERN}
+    counts, pairs = _count("barcode", patterns, index, str(r1), str(r2), 1, 10)
+    assert pairs == 1
+    assert counts == Counter({("GeneX", GUIDE_A, BARCODE_G): 1})
+
+
+def test_count_parallel_matches_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, [_guide_seq(GUIDE_A), _guide_seq(GUIDE_C), _guide_seq(GUIDE_A)])
+    _write_fastq(r2, ["T" * 20, "T" * 20, "T" * 20])
+    patterns = {"guide": GUIDE_PATTERN}
+    serial, serial_pairs = _count(
+        "guide", patterns, None, str(r1), str(r2), 1, 2
+    )
+    parallel, parallel_pairs = _count(
+        "guide", patterns, None, str(r1), str(r2), 2, 2
+    )
+    assert serial_pairs == parallel_pairs == 3
+    assert parallel == serial == Counter({GUIDE_A: 2, GUIDE_C: 1})
