@@ -287,7 +287,7 @@ def main(argv=None):
         help="Library file (gene<tab>guide, or gene<tab>guide<tab>barcode). "
              "First line may be a header. Omit for raw counts without gene mapping.",
     )
-    parser.add_argument("-p", "--guide-pattern", default=DEFAULT_GUIDE, help="sgRNA regex pattern.")
+    parser.add_argument("-g", "--guide-pattern", default=DEFAULT_GUIDE, help="sgRNA regex pattern.")
     parser.add_argument("-a", "--anchor-pattern", default=DEFAULT_ANCHOR, help="Full sgRNA+barcode regex pattern.")
     parser.add_argument("-b", "--barcode-pattern", default=DEFAULT_BARCODE, help="Barcode regex pattern.")
     parser.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout.")
