@@ -5,6 +5,7 @@ from collections import Counter
 import pytest
 
 from zfc.fastqcount import (
+    _iter_batches,
     _iter_paired_records,
     _load_library,
     _open_text,
@@ -123,3 +124,42 @@ def test_iter_paired_records_mismatch_raises(tmp_path):
     with open(str(r1)) as h1, open(str(r2)) as h2:
         with pytest.raises(ValueError, match="unequal"):
             list(_iter_paired_records(h1, h2))
+
+
+def test_iter_paired_records_truncated_raises(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA"])
+    r2.write_text("@read1\nTTT\n+\n")  # missing quality line (truncated)
+    with open(str(r1)) as h1, open(str(r2)) as h2:
+        with pytest.raises(ValueError, match="truncated"):
+            list(_iter_paired_records(h1, h2))
+
+
+def test_iter_paired_records_empty(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    r1.write_text("")
+    r2.write_text("")
+    with open(str(r1)) as h1, open(str(r2)) as h2:
+        assert list(_iter_paired_records(h1, h2)) == []
+
+
+def test_iter_batches_splits_and_partial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA", "CCC", "GGG"])
+    _write_fastq(r2, ["TTT", "AAA", "CCC"])
+    batches = list(_iter_batches(str(r1), str(r2), 2))
+    assert [len(batch) for batch in batches] == [2, 1]
+    assert batches[0] == [("AAA", "TTT"), ("CCC", "AAA")]
+    assert batches[1] == [("GGG", "CCC")]
+
+
+def test_iter_batches_reads_gzip(tmp_path):
+    r1 = tmp_path / "r1.fastq.gz"
+    r2 = tmp_path / "r2.fastq.gz"
+    _write_gzip_fastq(r1, ["AAA", "CCC"])
+    _write_gzip_fastq(r2, ["TTT", "GGG"])
+    batches = list(_iter_batches(str(r1), str(r2), 2))
+    assert batches == [[("AAA", "TTT"), ("CCC", "GGG")]]

@@ -90,6 +90,8 @@ def _iter_paired_records(handle1, handle2):
 
 def _iter_batches(read1: str, read2: str, chunk_size: int):
     """Yield lists of at most ``chunk_size`` (seq1, seq2) tuples."""
+    if chunk_size < 1:
+        raise ValueError("chunk_size must be >= 1")
     with _open_text(read1) as handle1, _open_text(read2) as handle2:
         batch = []
         for seq1, seq2 in _iter_paired_records(handle1, handle2):
