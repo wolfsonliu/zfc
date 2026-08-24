@@ -135,3 +135,77 @@ def _match_barcode_pair(seq1, seq2, anchor, barcode_pattern):
             barcode2 = mate_match.group(1) if mate_match else None
             return guide, barcode1, barcode2
     return None
+
+
+_WORKER_MODE = None
+_WORKER_PATTERNS = None
+_WORKER_LIBRARY = None
+
+
+def _init_worker(mode, pattern_strings, library):
+    global _WORKER_MODE, _WORKER_PATTERNS, _WORKER_LIBRARY
+    _WORKER_MODE = mode
+    _WORKER_PATTERNS = {name: re.compile(value) for name, value in pattern_strings.items()}
+    _WORKER_LIBRARY = library
+
+
+def _process_batch(batch):
+    """Count one batch of read pairs. Returns (partial Counter, pair count)."""
+    counts = Counter()
+    mode = _WORKER_MODE
+    library = _WORKER_LIBRARY
+    patterns = _WORKER_PATTERNS
+    if mode == "guide":
+        pattern = patterns["guide"]
+        for seq1, seq2 in batch:
+            guide = _match_guide(seq1, seq2, pattern)
+            if guide is None:
+                continue
+            if library is not None:
+                if guide in library:
+                    counts[(library[guide], guide)] += 1
+            else:
+                counts[guide] += 1
+    else:
+        anchor = patterns["anchor"]
+        barcode_pattern = patterns["barcode"]
+        for seq1, seq2 in batch:
+            hit = _match_barcode_pair(seq1, seq2, anchor, barcode_pattern)
+            if hit is None:
+                continue
+            guide, barcode1, barcode2 = hit
+            if library is not None:
+                if barcode1 is not None and (guide, barcode1) in library:
+                    counts[(library[(guide, barcode1)], guide, barcode1)] += 1
+                elif barcode2 is not None and (guide, barcode2) in library:
+                    counts[(library[(guide, barcode2)], guide, barcode2)] += 1
+            else:
+                barcode = barcode1 if barcode1 is not None else barcode2
+                counts[(guide, barcode)] += 1
+    return counts, len(batch)
+
+
+def _count(mode, pattern_strings, library, read1, read2, workers, chunk_size):
+    """Merge partial counts from serial or pooled batch processing."""
+    total = Counter()
+    pairs = 0
+    if workers <= 1:
+        _init_worker(mode, pattern_strings, library)
+        for batch in _iter_batches(read1, read2, chunk_size):
+            partial, size = _process_batch(batch)
+            total.update(partial)
+            pairs += size
+    else:
+        with mp.Pool(
+            workers,
+            initializer=_init_worker,
+            initargs=(mode, pattern_strings, library),
+        ) as pool:
+            for partial, size in pool.imap(
+                _process_batch,
+                _iter_batches(read1, read2, chunk_size),
+                chunksize=1,
+            ):
+                total.update(partial)
+                pairs += size
+    return total, pairs

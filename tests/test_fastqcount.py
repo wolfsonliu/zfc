@@ -5,6 +5,7 @@ from collections import Counter
 import pytest
 
 from zfc.fastqcount import (
+    _count,
     _iter_batches,
     _iter_paired_records,
     _load_library,
@@ -188,3 +189,31 @@ def test_match_barcode_pair_anchor_on_read1():
     assert _match_barcode_pair(seq1, seq2, anchor, barcode_pattern) == (
         GUIDE_A, BARCODE_G, BARCODE_G
     )
+
+
+def test_count_guide_raw_serial(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    seqs1 = [_guide_seq(GUIDE_A), _guide_seq(GUIDE_C), _guide_seq(GUIDE_A)]
+    _write_fastq(r1, seqs1)
+    _write_fastq(r2, ["T" * 20, "T" * 20, "T" * 20])
+    counts, pairs = _count(
+        "guide", {"guide": GUIDE_PATTERN}, None, str(r1), str(r2), 1, 10
+    )
+    assert pairs == 3
+    assert counts == Counter({GUIDE_A: 2, GUIDE_C: 1})
+
+
+def test_count_guide_with_library_counts_only_known_guides(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    lib = tmp_path / "lib.txt"
+    _write_fastq(r1, [_guide_seq(GUIDE_A), _guide_seq(GUIDE_A)])
+    _write_fastq(r2, ["T" * 20, "T" * 20])
+    lib.write_text("gene\tguide\nGeneX\t{}\nGeneY\t{}\n".format(GUIDE_A, GUIDE_C))
+    _entries, index = _load_library(str(lib), "guide")
+    counts, pairs = _count(
+        "guide", {"guide": GUIDE_PATTERN}, index, str(r1), str(r2), 1, 10
+    )
+    assert pairs == 2
+    assert counts == Counter({("GeneX", GUIDE_A): 2})
