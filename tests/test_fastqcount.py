@@ -5,6 +5,7 @@ from collections import Counter
 import pytest
 
 from zfc.fastqcount import (
+    _load_library,
     _open_text,
     reverse_complement,
 )
@@ -61,3 +62,26 @@ def test_open_text_detects_gzip(tmp_path):
         assert handle.read() == "ACGT\n"
     with _open_text(str(gzed)) as handle:
         assert handle.read() == "@read1\nACGT\n+\nIIII\n"
+
+
+def test_load_library_guide_skips_header(tmp_path):
+    path = tmp_path / "lib.txt"
+    path.write_text("gene\tguide\nGeneX\t{}\nGeneY\t{}\n".format(GUIDE_A, GUIDE_C))
+    entries, index = _load_library(str(path), "guide")
+    assert entries == [("GeneX", GUIDE_A), ("GeneY", GUIDE_C)]
+    assert index == {GUIDE_A: "GeneX", GUIDE_C: "GeneY"}
+
+
+def test_load_library_barcode_skips_header(tmp_path):
+    path = tmp_path / "lib.txt"
+    path.write_text("gene\tguide\tbarcode\nGeneX\t{0}\t{1}\n".format(GUIDE_A, BARCODE_G))
+    entries, index = _load_library(str(path), "barcode")
+    assert entries == [("GeneX", GUIDE_A, BARCODE_G)]
+    assert index == {(GUIDE_A, BARCODE_G): "GeneX"}
+
+
+def test_load_library_no_header_first_line_is_data(tmp_path):
+    path = tmp_path / "lib.txt"
+    path.write_text("GeneX\t{}\n".format(GUIDE_A))
+    entries, index = _load_library(str(path), "guide")
+    assert entries == [("GeneX", GUIDE_A)]
