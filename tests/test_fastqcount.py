@@ -5,6 +5,7 @@ from collections import Counter
 import pytest
 
 from zfc.fastqcount import (
+    _iter_paired_records,
     _load_library,
     _open_text,
     reverse_complement,
@@ -102,3 +103,23 @@ def test_load_library_reads_gzip(tmp_path):
     entries, index = _load_library(str(path), "guide")
     assert entries == [("GeneX", GUIDE_A)]
     assert index == {GUIDE_A: "GeneX"}
+
+
+def test_iter_paired_records_yields_sequences(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA", "CCC"])
+    _write_fastq(r2, ["TTT", "GGG"])
+    with open(str(r1)) as h1, open(str(r2)) as h2:
+        pairs = list(_iter_paired_records(h1, h2))
+    assert pairs == [("AAA", "TTT"), ("CCC", "GGG")]
+
+
+def test_iter_paired_records_mismatch_raises(tmp_path):
+    r1 = tmp_path / "r1.fastq"
+    r2 = tmp_path / "r2.fastq"
+    _write_fastq(r1, ["AAA", "CCC"])
+    _write_fastq(r2, ["TTT"])
+    with open(str(r1)) as h1, open(str(r2)) as h2:
+        with pytest.raises(ValueError, match="unequal"):
+            list(_iter_paired_records(h1, h2))

@@ -70,3 +70,32 @@ def _load_library(path: str, mode: str):
                 index.setdefault((cols[1], cols[2]), cols[0])
             entries.append(key)
     return entries, index
+
+
+def _iter_paired_records(handle1, handle2):
+    """Yield ``(seq1, seq2)`` for paired FASTQ files in lockstep."""
+    while True:
+        name1 = handle1.readline()
+        name2 = handle2.readline()
+        if not name1 and not name2:
+            return
+        if not name1 or not name2:
+            raise ValueError("paired FASTQ files have unequal record counts")
+        rec1 = [name1, handle1.readline(), handle1.readline(), handle1.readline()]
+        rec2 = [name2, handle2.readline(), handle2.readline(), handle2.readline()]
+        if any(line == "" for line in rec1 + rec2):
+            raise ValueError("truncated FASTQ record")
+        yield rec1[1].rstrip("\r\n"), rec2[1].rstrip("\r\n")
+
+
+def _iter_batches(read1: str, read2: str, chunk_size: int):
+    """Yield lists of at most ``chunk_size`` (seq1, seq2) tuples."""
+    with _open_text(read1) as handle1, _open_text(read2) as handle2:
+        batch = []
+        for seq1, seq2 in _iter_paired_records(handle1, handle2):
+            batch.append((seq1, seq2))
+            if len(batch) >= chunk_size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
