@@ -12,6 +12,7 @@ from zfc.fastqcount import (
     _match_barcode_pair,
     _match_guide,
     _open_text,
+    _write_output,
     reverse_complement,
 )
 
@@ -217,3 +218,30 @@ def test_count_guide_with_library_counts_only_known_guides(tmp_path):
     )
     assert pairs == 2
     assert counts == Counter({("GeneX", GUIDE_A): 2})
+
+
+def test_write_output_guide_raw(tmp_path):
+    out = tmp_path / "out.tsv"
+    _write_output(Counter({GUIDE_A: 2, GUIDE_C: 1}), None, "guide", str(out))
+    assert out.read_text() == "guide\tcount\n" + GUIDE_A + "\t2\n" + GUIDE_C + "\t1\n"
+
+
+def test_write_output_guide_zfc_ready_zero_fill(tmp_path):
+    out = tmp_path / "out.tsv"
+    entries = [("GeneX", GUIDE_A), ("GeneY", GUIDE_C)]
+    counts = Counter({("GeneX", GUIDE_A): 5})
+    _write_output(counts, entries, "guide", str(out))
+    expected = (
+        "gene\tguide\tbarcode\tcount\n"
+        "GeneX\t{0}\t{0}\t5\n"
+        "GeneY\t{1}\t{1}\t0\n"
+    ).format(GUIDE_A, GUIDE_C)
+    assert out.read_text() == expected
+
+
+def test_write_output_barcode_raw(tmp_path):
+    out = tmp_path / "out.tsv"
+    _write_output(Counter({(GUIDE_A, BARCODE_G): 3}), None, "barcode", str(out))
+    assert out.read_text() == (
+        "guide\tbarcode\tcount\n{0}\t{1}\t3\n".format(GUIDE_A, BARCODE_G)
+    )

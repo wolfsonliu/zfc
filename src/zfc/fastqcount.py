@@ -209,3 +209,41 @@ def _count(mode, pattern_strings, library, read1, read2, workers, chunk_size):
                 total.update(partial)
                 pairs += size
     return total, pairs
+
+
+def _write_output(counts, entries, mode, output):
+    """Write the headered count table to ``output`` ('-' means stdout)."""
+    close = False
+    if output in (None, "-"):
+        handle = sys.stdout
+    else:
+        handle = open(output, "w")
+        close = True
+    try:
+        if mode == "guide":
+            if entries is not None:
+                handle.write("gene\tguide\tbarcode\tcount\n")
+                for gene, guide in sorted(set(entries)):
+                    count = counts.get((gene, guide), 0)
+                    handle.write("{}\t{}\t{}\t{}\n".format(gene, guide, guide, count))
+            else:
+                handle.write("guide\tcount\n")
+                for guide in sorted(counts):
+                    handle.write("{}\t{}\n".format(guide, counts[guide]))
+        else:
+            if entries is not None:
+                handle.write("gene\tguide\tbarcode\tcount\n")
+                for gene, guide, barcode in sorted(set(entries)):
+                    count = counts.get((gene, guide, barcode), 0)
+                    handle.write(
+                        "{}\t{}\t{}\t{}\n".format(gene, guide, barcode, count)
+                    )
+            else:
+                handle.write("guide\tbarcode\tcount\n")
+                for guide, barcode in sorted(counts):
+                    handle.write(
+                        "{}\t{}\t{}\n".format(guide, barcode, counts[(guide, barcode)])
+                    )
+    finally:
+        if close:
+            handle.close()
