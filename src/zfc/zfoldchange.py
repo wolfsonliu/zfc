@@ -99,14 +99,16 @@ def _lfc_std_model(bar_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, li
         (bar_df['ctrl'] >= ctrl_q1) & (bar_df['ctrl'] <= ctrl_q2)
     ]
 
-    bins = pd.cut(model_data['ctrl'], 200).astype(str)
+    bins = pd.cut(model_data['ctrl'], 200)
 
     train_data = pd.DataFrame(
         {
-            'lfcstd': model_data.groupby(bins)['lfc'].std(),
-            'ctrlmean': model_data.groupby(bins)['ctrl'].mean()
+            'lfcstd': model_data.groupby(bins, observed=True)['lfc'].std(),
+            'ctrlmean': model_data.groupby(bins, observed=True)['ctrl'].mean()
         }
     )
+    train_data.index = train_data.index.astype(str)
+    train_data = train_data.sort_index()
 
     train_data = train_data.loc[~train_data['lfcstd'].isnull()]
 

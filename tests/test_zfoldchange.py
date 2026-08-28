@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from zfc import zfoldchange
+from zfc.zfoldchange import _lfc_std_model
 
 
 SG_COLUMNS = [
@@ -84,3 +85,37 @@ def test_missing_column_raises_value_error():
     data = data.drop(columns=['barcode'])
     with pytest.raises(ValueError, match='barcode'):
         zfoldchange(data, iteration=5, seed=0)
+
+
+def _reference_lfc_std_train(bar_df):
+    """Old `.astype(str)` grouping, kept as an independent reference."""
+    lfc_q1 = bar_df['lfc'].quantile(0.05)
+    lfc_q2 = bar_df['lfc'].quantile(0.95)
+    ctrl_q1 = bar_df['ctrl'].quantile(0.025)
+    ctrl_q2 = bar_df['ctrl'].quantile(0.95)
+    model_data = bar_df.loc[
+        (bar_df['lfc'] >= lfc_q1) & (bar_df['lfc'] <= lfc_q2) &
+        (bar_df['ctrl'] >= ctrl_q1) & (bar_df['ctrl'] <= ctrl_q2)
+    ]
+    bins = pd.cut(model_data['ctrl'], 200).astype(str)
+    train_data = pd.DataFrame({
+        'lfcstd': model_data.groupby(bins)['lfc'].std(),
+        'ctrlmean': model_data.groupby(bins)['ctrl'].mean(),
+    })
+    return train_data.loc[~train_data['lfcstd'].isnull()]
+
+
+def test_lfc_std_model_grouping_unchanged():
+    rng = np.random.default_rng(7)
+    n = 8000
+    bar = pd.DataFrame({
+        'ctrl': rng.uniform(10.0, 4000.0, n),
+        'lfc': rng.normal(0.0, 1.0, n),
+    })
+
+    _, train_new, _ = _lfc_std_model(bar)
+    reference = _reference_lfc_std_train(bar)
+
+    assert list(train_new.index) == list(reference.index)
+    assert np.array_equal(train_new['ctrlmean'].to_numpy(), reference['ctrlmean'].to_numpy())
+    assert np.array_equal(train_new['lfcstd'].to_numpy(), reference['lfcstd'].to_numpy())
