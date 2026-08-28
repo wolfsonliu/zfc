@@ -8,32 +8,8 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
-import functools
 import scipy.stats as stats
 import warnings
-
-
-def ecdf(x: np.ndarray) -> functools.partial:
-    '''Calculate the empirical cumulative density function
-       ====================
-       Return a cumulative density function based
-       on the input data.
-
-    '''
-    x = np.array(x)
-    x.sort()
-    n = len(x)
-    y = np.concatenate([[0], np.linspace(1/n, 1, n)])
-
-    def childfunc(sample, x, y, sorted=True):
-        if not sorted:
-            asort = np.argsort(x)
-            x = np.take(x, asort, 0)
-            y = np.take(y, asort, 0)
-        idx = np.searchsorted(x, sample)
-        return y[idx]
-
-    return functools.partial(childfunc, x=x, y=y)
 
 
 def bonferroni_correction(pvals: np.ndarray) -> np.ndarray:
