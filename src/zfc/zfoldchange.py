@@ -87,7 +87,7 @@ def _fold_change(bar_df: pd.DataFrame) -> pd.DataFrame:
     return bar_df
 
 
-def _lfc_std_model(bar_df: pd.DataFrame):
+def _lfc_std_model(bar_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, linear_model.LinearRegression]:
     """Fit the lfc-std linear model and add lfc_std (returns bar_df, train, reg)."""
     lfc_q1 = bar_df['lfc'].quantile(0.05)
     lfc_q2 = bar_df['lfc'].quantile(0.95)
@@ -188,7 +188,7 @@ def _empirical_p(groups, values: pd.Series, iteration: int, rng) -> pd.DataFrame
     return group_df
 
 
-def _rank_aggregation(bar_df: pd.DataFrame, level: str, top_n: int | None) -> dict:
+def _rank_aggregation(bar_df: pd.DataFrame, level: str, top_n: int | None) -> dict[str, pd.Series]:
     """RRA and mean-rank scores for one level ('sg' or 'gene')."""
     if level == 'sg':
         group_level = [0, 1]
@@ -234,7 +234,7 @@ def zfoldchange(data: pd.DataFrame,
                 top_n_gene: int | None = None,
                 iteration: int = 100,
                 normalization: str = 'total',
-                seed: int = 0):
+                seed: int = 0) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, linear_model.LinearRegression]:
     # The data DF should contain: [gene, guide, barcode, ctrl, exp]
 
     data = _validate_input(data)
