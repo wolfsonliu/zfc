@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+import pytest
 from scipy.stats import beta
 
 from zfc.statsfunc import df_robust_rank_aggregation
+from zfc.statsfunc import p_adjust
 
 
 def _reference_rra(rank_matrix):
@@ -32,3 +34,16 @@ def test_robust_rank_aggregation_matches_reference():
 
     assert list(result.index) == list(m.index)
     assert np.array_equal(result.to_numpy(), expected)
+
+
+def test_p_adjust_rejects_unknown_method():
+    with pytest.raises(ValueError):
+        p_adjust(np.array([0.01, 0.5]), 'bogus')
+
+
+def test_p_adjust_returns_corrected_array():
+    p = np.array([0.01, 0.05, 0.5])
+    for method in ('BH', 'Bonferroni'):
+        adj = p_adjust(p, method)
+        assert adj.shape == p.shape
+        assert ((adj >= 0) & (adj <= 1)).all()

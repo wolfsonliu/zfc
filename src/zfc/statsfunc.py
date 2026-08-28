@@ -66,7 +66,8 @@ def bh_correction(pvals: np.ndarray) -> np.ndarray:
 
 
 def p_adjust(pvals, method: str = 'BH'):
-    assert method in ['BH', 'Bonferroni'], 'Adjust method should be in: BH, Bonferroni'
+    if method not in ('BH', 'Bonferroni'):
+        raise ValueError('Adjust method should be in: BH, Bonferroni')
     adjust_func = {
         'BH': bh_correction,
         'Bonferroni': bonferroni_correction
