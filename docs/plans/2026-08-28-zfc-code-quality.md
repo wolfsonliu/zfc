@@ -338,9 +338,15 @@ with:
         }
     )
     train_data.index = train_data.index.astype(str)
+    train_data = train_data.sort_index()
 
     train_data = train_data.loc[~train_data['lfcstd'].isnull()]
 ```
+
+The `.sort_index()` is **required**: the old `groupby(astype(str))` sorted the
+string bin labels lexicographically, while the categorical groupby sorts them
+numerically. Without it the (order-sensitive) regression fit changes at the
+last bit and the parity test fails.
 
 - [ ] **Step 4: Run the characterization test and the golden parity test**
 

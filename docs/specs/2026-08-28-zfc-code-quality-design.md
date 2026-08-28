@@ -126,15 +126,15 @@ train_data = pd.DataFrame({
     'ctrlmean': model_data.groupby(bins, observed=True)['ctrl'].mean(),
 })
 train_data.index = train_data.index.astype(str)
+train_data = train_data.sort_index()
 ```
 
-`model_data['ctrl']` is already bounded by the [0.025, 0.95] quantiles before
-cutting, so the cut has no out-of-range values. Verified on
-`tmp/REP_A549_High.txt`: both paths yield the same 200 bins, the same index,
-and 0 NaN cuts. A fixed-fixture equivalence test asserts the new `train_data`
-(index + values) equals the pre-change result, and the golden parity test
-guards the downstream `lfc_std`/`zlfc` chain, so any pathological drift (e.g. a
-cut boundary producing NaN on some input) is caught.
+`train_data.index.astype(str)` is cheap (≈200 labels) and reproduces the
+string bin labels; `train_data.sort_index()` is required because the old
+`groupby(astype(str))` sorted those string labels **lexicographically**,
+whereas a categorical groupby sorts bins numerically — the regression fit is
+floating-point order-sensitive, so the order must match bit-for-bit (this was
+caught by `tests/test_parity.py` during implementation).
 
 ## Tests
 
