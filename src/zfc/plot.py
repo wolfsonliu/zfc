@@ -231,7 +231,7 @@ def lfcstd_ctrlmean_figure(train_data, lm):
         train_data['ctrlmean'], train_data['lfcstd'],
         color=BLUE, alpha=0.6, edgecolor='none'
     )
-    x = np.arange(train_data['ctrlmean'].min(), train_data['ctrlmean'].max())
+    x = np.linspace(train_data['ctrlmean'].min(), train_data['ctrlmean'].max(), 100)
     y = x * lm.coef_[0] + lm.intercept_
     axes.plot(x, y, color=ACCENT, linestyle='dotted', linewidth=1.5)
     axes.set_title(
@@ -258,7 +258,7 @@ def zlfc_hist(data):
 def zlfc_rra_scatter(data):
     rra = data[['RRA_Score_down', 'RRA_Score_up']].min(axis=1)
     fig, axes = plt.subplots(1, 1)
-    axes.scatter(data['zlfc'], np.log10(rra) * -1, color=BLUE, alpha=0.15, edgecolor='none')
+    axes.scatter(data['zlfc'], _log10p(rra), color=BLUE, alpha=0.15, edgecolor='none')
     axes.set_xlabel('Z score of $log_{2}$ fold change')
     axes.set_ylabel('$-log_{10}$(Robust Rank Aggregation)')
     _style_ax(axes)
@@ -268,7 +268,7 @@ def zlfc_rra_scatter(data):
 def zlfc_rrafdr_scatter(data):
     rra = data[['RRA_Score_down_adj', 'RRA_Score_up_adj']].min(axis=1)
     fig, axes = plt.subplots(1, 1)
-    axes.scatter(data['zlfc'], np.log10(rra) * -1, color=BLUE, alpha=0.15, edgecolor='none')
+    axes.scatter(data['zlfc'], _log10p(rra), color=BLUE, alpha=0.15, edgecolor='none')
     axes.set_xlabel('Z score of $log_{2}$ fold change')
     axes.set_ylabel('$-log_{10}$(Robust Rank Aggregation FDR)')
     _style_ax(axes)
